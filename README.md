@@ -34,8 +34,10 @@
    - https://www.digikey.com/product-detail/en/vishay-semiconductor-opto-division/VEML6070/VEML6070CT-ND/5171286
    - http://www.vishay.com/product?docid=84277&tab=designtools-ppg
    - https://www.adafruit.com/product/2899
+   
 	Glass Diameter 		= 36.75mm
 	First Step Height	= 03.00mm
 	First Step Diameter	= 40.55mm
 	First Step Lip Width 	= 01.90mm
+	
 ![alt text](https://github.com/ryanredbaron/UV-Watch/blob/master/Specifications/adafruit_products_image.png?raw=true)
