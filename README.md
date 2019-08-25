@@ -31,6 +31,9 @@
   - Motion sensing
 
 ## Specs
+   - https://www.digikey.com/product-detail/en/vishay-semiconductor-opto-division/VEML6070/VEML6070CT-ND/5171286
+   - http://www.vishay.com/product?docid=84277&tab=designtools-ppg
+   - https://www.adafruit.com/product/2899
 	Glass Diameter 		= 36.75mm
 	First Step Height	= 03.00mm
 	First Step Diameter	= 40.55mm
