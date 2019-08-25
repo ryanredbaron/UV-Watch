@@ -29,3 +29,9 @@
   - UV sensor (existing)
   - Battery??
   - Motion sensing
+
+## Specs
+	Glass Diameter 		= 36.75mm
+	First Step Height	= 03.00mm
+	First Step Diameter	= 40.55mm
+	First Step Lip Width 	= 01.90mm
