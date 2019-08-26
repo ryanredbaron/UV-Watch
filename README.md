@@ -49,9 +49,9 @@
       - Adafruit VEML-6075, gnd in. 
     - D4
       - NeoPixel "In", data in.
-    - `D2
+    - D2
       - 
-    - `D1
+    - D1
       - 
  - Adafruit VEML-6075 Pins
     - VIN
