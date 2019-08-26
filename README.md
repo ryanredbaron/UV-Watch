@@ -11,14 +11,14 @@
  
 ## Project List
 1. Hardware
-   - [ ] OshPark board design
-   - [ ] Build/fit watch in case
-   
-2. Software
-   - [ ] Integrate with new processor
-   - [ ] Time control (accurate)
-   - [ ] Docking procedure to update time and charge
-   
+   - [ ] Recreate setup with Adafruit Pro Micro
+   - [ ] Create schematic on Eagle from above
+   - [ ] Create list of additional features wanted
+   	 - Crystal?
+	 - Accel?
+	 - USB?
+	 - Power?
+	 - Test points?
 ## To-do list
 ### Firmware
 ### Hardware
