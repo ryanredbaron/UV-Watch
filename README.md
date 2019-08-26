@@ -19,17 +19,6 @@
 	 - USB?
 	 - Power?
 	 - Test points?
-## To-do list
-### Firmware
-### Hardware
-- Custom hardware 
-  - Test pads for charging/comms/programming
-  - ATMega 32 u4
-  - WS2812 LEDs in ring config
-  - UV sensor (existing)
-  - Battery??
-  - Motion sensing
-
 ## Specs
    - Selected Sensor - VEML-6070
      - https://www.digikey.com/product-detail/en/vishay-semiconductor-opto-division/VEML6070/VEML6070CT-ND/5171286
