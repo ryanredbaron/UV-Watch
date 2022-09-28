@@ -20,9 +20,11 @@ float CurrentReading = 0;
 
 const int UVnumReadings = 10;
 float UVreadings[UVnumReadings];  // the readings from the analog input
-int UVreadIndex = 0;            // the index of the current reading
+int UVreadIndex = 0;              // the index of the current reading
 float UVtotal = 0;                // the running total
 float UVaverage = 0;              // the average
+
+float PercentBurned = 0;
 
 void setup() {
   WiFi.forceSleepBegin();
@@ -56,23 +58,26 @@ void loop() {
     UVtotal = UVtotal + UVreadings[UVreadIndex];
     UVreadIndex++;
     MeasurementTimer = 0;
-  }
-
-  if (DisplayTimer == 100) {
     if (UVreadIndex >= UVnumReadings) {
       UVreadIndex = 0;
     }
+  }
+
+  if (DisplayTimer == 100) {
     UVaverage = UVtotal / UVnumReadings;
+    //y = -267.48x + 3913.6
+    //Given "x" UV level, "y" returns seconds needed to burn
+    //We measure time spent in "x" and calc a "% burned"
+    //(Time Spent at UV level)/(-267.48*(UV level)+3913.6)
+    PercentBurned = PercentBurned + (1) / (-267.48 * (UVaverage) + 3913.6);
 
     Serial.print("Actual - ");
     Serial.println(CurrentReading);
     Serial.print("Average - ");
     Serial.println(UVaverage);
+    Serial.print("% burned - ");
+    Serial.println(PercentBurned);
     Serial.println("----------------");
-    //y = -267.48x + 3913.6
-    //Given "x" UV level, "y" returns seconds needed to burn
-    //We measure time spent in "x" and calc a "% burned"
-    //(Time Spent at UV level)/(-267.48*(UV level)+3913.6)
 
     /*
     for (; PixelLocation < MaxUV; PixelLocation++) {
