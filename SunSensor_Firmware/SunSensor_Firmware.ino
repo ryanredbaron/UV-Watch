@@ -50,12 +50,6 @@ void setup() {
 void loop() {
   MeasurementTimer++;
   CurrentReadingInt = uv.readUVI() + 0.5;
-  if (CurrentReadingInt > MaxUV) {
-    MaxUV = CurrentReadingInt;
-    if (MaxUV > 12) {
-      MaxUV = 12;
-    }
-  }
   if (MeasurementTimer == 100) {
     Serial.print("Actual - "); Serial.println(uv.readUVI());
     Serial.print("Actual Int - "); Serial.println(CurrentReadingInt);
