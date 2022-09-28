@@ -20,10 +20,10 @@ int DisplayTimer = 0;
 float CurrentReading = 0;
 
 const int UVnumReadings = 10;
-float UVreadings[UVnumReadings];  // the readings from the analog input
-int UVreadIndex = 0;              // the index of the current reading
-float UVtotal = 0;                // the running total
-float UVaverage = 0;              // the average
+float UVreadings[UVnumReadings];
+int UVreadIndex = 0;
+float UVtotal = 0;
+float UVaverage = 0;
 
 float PercentBurned = 0;
 int SecondsInSun = 0;
@@ -61,14 +61,17 @@ void loop() {
     if (CurrentReading > 12) {
       CurrentReading = 12;
     }
+    if (CurrentReading < 0.5) {
+      CurrentReading = 0;
+    }
     UVtotal = UVtotal - UVreadings[UVreadIndex];
     UVreadings[UVreadIndex] = CurrentReading;
     UVtotal = UVtotal + UVreadings[UVreadIndex];
     UVreadIndex++;
-    MeasurementTimer = 0;
     if (UVreadIndex >= UVnumReadings) {
       UVreadIndex = 0;
     }
+    MeasurementTimer = 0;
   }
   //-----------------display control------------------
   if (DisplayTimer == 100) {
@@ -77,6 +80,9 @@ void loop() {
       UVaverage = 0;
       if (PercentBurned > 0) {
         PercentBurned = PercentBurned - .01;
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!FOR TESTING ONLY, COMMENT OUT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //PercentBurned = PercentBurned - 5;
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       } else {
         SecondsInSun = 0;
         pixels.clear();
@@ -87,12 +93,16 @@ void loop() {
       //Given "x" UV level, "y" returns seconds needed to burn
       //We measure time spent in "x" and calc a "% burned"
       //(Time Spent at UV level)/(-267.48*(UV level)+3913.6)
-      if (PercentBurned < 100) {
-        PercentBurned = PercentBurned + ((1) / (-267.48 * (UVaverage) + 3913.6)) * 100;
-        PercentBurned = PercentBurned * 1.5;
-      } else {
-        PercentBurned = 100;
-      }
+      PercentBurned = PercentBurned + ((1) / (-267.48 * (UVaverage) + 3913.6)) * 100;
+      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!FOR TESTING ONLY, COMMENT OUT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      //PercentBurned = PercentBurned + 5;
+      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    }
+    if (PercentBurned > 100) {
+      PercentBurned = 100;
+    }
+    if (PercentBurned < 0) {
+      PercentBurned = 0;
     }
 
     Serial.print("Actual - ");
@@ -111,7 +121,7 @@ void loop() {
       pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
       pixels.show();
     }
-    for (float PixelLocation = 0; PixelLocation >= (TotalLEDs * (PercentBurned / 100)); PixelLocation--) {
+    for (float PixelLocation = TotalLEDs; PixelLocation >= (TotalLEDs * (PercentBurned / 100)); PixelLocation--) {
       pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
       pixels.show();
     }
