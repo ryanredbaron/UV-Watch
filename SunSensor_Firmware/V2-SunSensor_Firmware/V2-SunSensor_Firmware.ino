@@ -65,18 +65,21 @@ void loop() {
 
   if (DisplayTimer == 100) {
     UVaverage = UVtotal / UVnumReadings;
+    if(UVaverage < 0.1){
+      UVaverage = 0;
+    }
     //y = -267.48x + 3913.6
     //Given "x" UV level, "y" returns seconds needed to burn
     //We measure time spent in "x" and calc a "% burned"
     //(Time Spent at UV level)/(-267.48*(UV level)+3913.6)
-    PercentBurned = PercentBurned + (1) / (-267.48 * (UVaverage) + 3913.6);
+    PercentBurned = (PercentBurned + (1) / (-267.48 * (UVaverage) + 3913.6));
 
     Serial.print("Actual - ");
     Serial.println(CurrentReading);
     Serial.print("Average - ");
     Serial.println(UVaverage);
     Serial.print("% burned - ");
-    Serial.println(PercentBurned);
+    Serial.println(PercentBurned*100);
     Serial.println("----------------");
 
     /*
