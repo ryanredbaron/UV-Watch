@@ -9,11 +9,11 @@ Adafruit_VEML6075 uv = Adafruit_VEML6075();
 #define NUMPIXELS 12
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
-int LEDBrightnessMax = 25;
-int PixelLocation = 0;
+int LEDBrightnessMax = 255;
 
 int RedLEDTimer = 0;
 int GreenLEDTimer = 0;
+float TotalLEDs = 12;
 
 int MeasurementTimer = 0;
 int DisplayTimer = 0;
@@ -55,8 +55,12 @@ void loop() {
   MeasurementTimer++;
   DisplayTimer++;
 
+  //-----------------measurement control------------------
   if (MeasurementTimer == 10) {
     CurrentReading = uv.readUVI();
+    if (CurrentReading > 12) {
+      CurrentReading = 12;
+    }
     UVtotal = UVtotal - UVreadings[UVreadIndex];
     UVreadings[UVreadIndex] = CurrentReading;
     UVtotal = UVtotal + UVreadings[UVreadIndex];
@@ -66,13 +70,13 @@ void loop() {
       UVreadIndex = 0;
     }
   }
-
+  //-----------------display control------------------
   if (DisplayTimer == 100) {
     UVaverage = UVtotal / UVnumReadings;
     if (UVaverage < 0.1) {
       UVaverage = 0;
-      if (PercentBurned > 0.1) {
-        PercentBurned = PercentBurned - 0.00001;
+      if (PercentBurned > 0) {
+        PercentBurned = PercentBurned - .01;
       } else {
         SecondsInSun = 0;
         pixels.clear();
@@ -83,7 +87,12 @@ void loop() {
       //Given "x" UV level, "y" returns seconds needed to burn
       //We measure time spent in "x" and calc a "% burned"
       //(Time Spent at UV level)/(-267.48*(UV level)+3913.6)
-      PercentBurned = (PercentBurned + (1) / (-267.48 * (UVaverage) + 3913.6));
+      if (PercentBurned < 100) {
+        PercentBurned = PercentBurned + ((1) / (-267.48 * (UVaverage) + 3913.6)) * 100;
+        PercentBurned = PercentBurned * 1.5;
+      } else {
+        PercentBurned = 100;
+      }
     }
 
     Serial.print("Actual - ");
@@ -91,18 +100,18 @@ void loop() {
     Serial.print("Average - ");
     Serial.println(UVaverage);
     Serial.print("% burned - ");
-    Serial.println(PercentBurned * 100);
+    Serial.println(PercentBurned);
     Serial.print("Seconds in sun - ");
     Serial.println(SecondsInSun);
     Serial.println("----------------");
 
-    for (; PixelLocation < (NUMPIXELS * PercentBurned); PixelLocation++) {
-      RedLEDTimer = LEDBrightnessMax + (LEDBrightnessMax * (PixelLocation / NUMPIXELS));
-      GreenLEDTimer = LEDBrightnessMax - (LEDBrightnessMax * (PixelLocation / NUMPIXELS));
-      pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer , GreenLEDTimer, 0));
-      pixels.show(); 
+    for (float PixelLocation = 0; PixelLocation < (TotalLEDs * (PercentBurned / 100)); PixelLocation++) {
+      RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
+      GreenLEDTimer = 255 - RedLEDTimer;
+      pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
+      pixels.show();
     }
-    for (; PixelLocation >= (NUMPIXELS * PercentBurned); PixelLocation--) {
+    for (float PixelLocation = 0; PixelLocation >= (TotalLEDs * (PercentBurned / 100)); PixelLocation--) {
       pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
       pixels.show();
     }
