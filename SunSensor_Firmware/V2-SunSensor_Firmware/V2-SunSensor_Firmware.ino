@@ -1,4 +1,12 @@
-#include <ESP8266WiFi.h>
+/*
+Lolin WEMOS d1 mini clone
+*/
+
+//Increase to burn faster, decrease to be a beautiful tan person
+//  -0.1  =  10% not ginger
+//  0     =  ginger
+//  +0.1  =  10% extra ginger
+int GingerIndex = 50;
 
 #include <Wire.h>
 #include "Adafruit_VEML6075.h"
@@ -9,7 +17,7 @@ Adafruit_VEML6075 uv = Adafruit_VEML6075();
 #define NUMPIXELS 12
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
-int LEDBrightnessMax = 255;
+int LEDBrigthness = 5;
 
 int RedLEDTimer = 0;
 int GreenLEDTimer = 0;
@@ -29,10 +37,11 @@ float PercentBurned = 0;
 int SecondsInSun = 0;
 
 void setup() {
-  WiFi.forceSleepBegin();
-  delay(100);
   Serial.begin(115200);
   pixels.begin();
+  pixels.setBrightness(LEDBrigthness);
+  pixels.show();
+  pixels.show();
   delay(100);
   pixels.clear();
   if (!uv.begin()) {
@@ -80,9 +89,6 @@ void loop() {
       UVaverage = 0;
       if (PercentBurned > 0) {
         PercentBurned = PercentBurned - .01;
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!FOR TESTING ONLY, COMMENT OUT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //PercentBurned = PercentBurned - 5;
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       } else {
         SecondsInSun = 0;
         pixels.clear();
@@ -93,10 +99,8 @@ void loop() {
       //Given "x" UV level, "y" returns seconds needed to burn
       //We measure time spent in "x" and calc a "% burned"
       //(Time Spent at UV level)/(-267.48*(UV level)+3913.6)
-      PercentBurned = PercentBurned + ((1) / (-267.48 * (UVaverage) + 3913.6)) * 100;
-      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!FOR TESTING ONLY, COMMENT OUT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      //PercentBurned = PercentBurned + 5;
-      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      //+ginger index
+      PercentBurned = (PercentBurned + ((1) / (-267.48 * (UVaverage) + 3913.6)) * 100) + (((1) / (-267.48 * (UVaverage) + 3913.6)) * 100) * GingerIndex;
     }
     if (PercentBurned > 100) {
       PercentBurned = 100;
@@ -114,15 +118,37 @@ void loop() {
     Serial.print("Seconds in sun - ");
     Serial.println(SecondsInSun);
     Serial.println("----------------");
-
-    for (float PixelLocation = 0; PixelLocation < (TotalLEDs * (PercentBurned / 100)); PixelLocation++) {
-      RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
-      GreenLEDTimer = 255 - RedLEDTimer;
-      pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
-      pixels.show();
-    }
-    for (float PixelLocation = TotalLEDs; PixelLocation >= (TotalLEDs * (PercentBurned / 100)); PixelLocation--) {
-      pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
+    if (PercentBurned < 100) {
+      /*Full ring
+      for (float PixelLocation = 0; PixelLocation < (TotalLEDs * (PercentBurned / 100)); PixelLocation++) {
+        RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
+        GreenLEDTimer = 255 - RedLEDTimer;
+        pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
+        pixels.show();
+      }
+      for (float PixelLocation = TotalLEDs; PixelLocation >= (TotalLEDs * (PercentBurned / 100)); PixelLocation--) {
+        pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
+        pixels.show();
+      }
+      */
+      for (float PixelLocation = 0; PixelLocation != TotalLEDs; PixelLocation++) {
+        if (PixelLocation == int(TotalLEDs * (PercentBurned / 100))) {
+          RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
+          GreenLEDTimer = 255 - RedLEDTimer;
+          pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
+          pixels.show();
+        } else {
+          pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
+          pixels.show();
+        }
+      }
+    } else {
+      pixels.setBrightness(255);
+      for (int PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+        pixels.setPixelColor(PixelLocation, pixels.Color(255, 0, 0));
+        pixels.show();
+      }
+      pixels.setBrightness(LEDBrigthness);
       pixels.show();
     }
 
