@@ -74,17 +74,19 @@ void setup() {
     pixels.setPixelColor(9, pixels.Color(0, 0, 50));
     Serial.println("Failed to communicate with VEML6075 sensor, check wiring?");
     while (1) {
-      delay(100);
+      delay(5000);
     }
   }
+  Serial.println("-----------------------------------------");
   Serial.println("Found VEML6075 sensor");
   Serial.println("Program Begin");
+  Serial.println("-----------------------------------------");
   pixels.setPixelColor(0, pixels.Color(0, 50, 0));
   pixels.setPixelColor(3, pixels.Color(0, 50, 0));
   pixels.setPixelColor(6, pixels.Color(0, 50, 0));
   pixels.setPixelColor(9, pixels.Color(0, 50, 0));
   pixels.show();
-  delay(1000);
+  delay(3000);
   pixels.clear();
   pixels.show();
 }
