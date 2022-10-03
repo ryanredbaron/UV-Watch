@@ -11,17 +11,23 @@ Lolin WEMOS d1 mini clone
 //We measure time spent in "x" and calc a "% burned"
 //(Time Spent at UV level)/(-267.48*(UV level)+3913.6) + ginger index
 float GingerIndex = 0;
-//SPF = burning time X SPF Number
 //Example: If you burn in 20 minutes SPF 30 will give you 600 minutes (10 hours) of burning protection from UBV rays.
 //input SPF used
 float SPFIndex = 30;
-//How long you expect your sunscreen to last
+//How long you expect your sunscreen to last in seconds
 int SunScreenDurationSeconds = 3600;
 //we assume the person isn't wearing sunscreen (BOOOOO!)
 bool SunScreenApplied = true;
 //Ticks down for every second spent in the sun
 int SunScreenTTBTimer = SunScreenDurationSeconds;
 
+//Variables to help calculate
+float PercentBurned = 0;
+float SecondsToBurn = 0;
+float PercentAddedToBurn = 0;
+float GingerBurn = 0;
+
+//Average UV stuffs.
 const int UVnumReadings = 10;
 float UVreadings[UVnumReadings];
 int UVreadIndex = 0;
@@ -29,29 +35,28 @@ float UVtotal = 0;
 float UVaverage = 0;
 int SecondsInSun = 0;
 
-float PercentBurned = 0;
-float SecondsToBurn = 0;
-float PercentAddedToBurn = 0;
-float GingerBurn = 0;
 
+
+//UV sensor control
 #include <Wire.h>
 #include "Adafruit_VEML6075.h"
 Adafruit_VEML6075 uv = Adafruit_VEML6075();
+float CurrentReading = 0;
 
+//NeoPixel control
 #include <Adafruit_NeoPixel.h>
 #define PIN D4
 #define NUMPIXELS 12
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
-
 int LEDBrigthness = 5;
-
 int RedLEDTimer = 0;
 int GreenLEDTimer = 0;
 float TotalLEDs = 12;
 
+//Timing control
 int MeasurementTimer = 0;
 int DisplayTimer = 0;
-float CurrentReading = 0;
+
 
 void setup() {
   Serial.begin(115200);
@@ -87,13 +92,14 @@ void loop() {
   MeasurementTimer++;
   DisplayTimer++;
 
-  //-----------------measurement control------------------
+  //-----------------Avg measurement control------------------
+  //Every 10th of a second
   if (MeasurementTimer == 10) {
     CurrentReading = uv.readUVI();
     if (CurrentReading > 12) {
       CurrentReading = 12;
     }
-    if (CurrentReading < 0.5) {
+    if (CurrentReading < 0.2) {
       CurrentReading = 0;
     }
     UVtotal = UVtotal - UVreadings[UVreadIndex];
@@ -105,12 +111,12 @@ void loop() {
     }
     MeasurementTimer = 0;
   }
-  //-----------------display control------------------
+  //-----------------Display control (LEDs)------------------
+  //Every second
   if (DisplayTimer == 100) {
     UVaverage = UVtotal / UVnumReadings;
-    
     if (UVaverage < 0.1) {
-    //If we see no UV
+      //If we see no UV
       UVaverage = 0;
       if (PercentBurned > 0) {
         //Decay percent burned by .1%/Second when no UV
@@ -121,7 +127,7 @@ void loop() {
         pixels.clear();
       }
     } else {
-    //If we see UV, start counting time in sun
+      //If we see UV, start counting time in sun
       SecondsInSun++;
       //When sunscreen wears off, Applied=false and reset timer for next application
       if (SunScreenTTBTimer == 0) {
@@ -159,8 +165,10 @@ void loop() {
     Serial.println(PercentBurned);
     Serial.print("Seconds in sun - ");
     Serial.println(SecondsInSun);
-    Serial.print("Time to Burn (min)- ");
-    Serial.println(((100 / PercentBurned) * SecondsInSun) / 60);
+    if (CurrentReading != 0) {
+      Serial.print("Time to Burn (min)- ");
+      Serial.println(((100 / PercentBurned) * SecondsInSun) / 60);
+    }
     Serial.print("Sunscreen applied? - ");
     Serial.println(SunScreenApplied ? "Applied" : "None");
     Serial.print("Sunscreen left - ");
@@ -192,7 +200,7 @@ void loop() {
           pixels.show();
         }
       }
-    //If we are burnt, we also burn our retinas by flashing bright, bright red
+      //If we are burnt, we also burn our retinas by flashing bright, bright red
     } else {
       pixels.setBrightness(255);
       for (int PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
