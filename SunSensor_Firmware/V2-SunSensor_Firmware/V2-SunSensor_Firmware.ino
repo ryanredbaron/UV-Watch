@@ -1,8 +1,6 @@
 /*
 Lolin WEMOS d1 mini clone
 */
-
-
 //y = -267.48x + 3913.6
 //Given "x" UV level, "y" returns seconds needed to burn
 //We measure time spent in "x" and calc a "% burned"
@@ -11,13 +9,19 @@ Lolin WEMOS d1 mini clone
 //  -     = less ginger
 //  1     =  ginger
 //  +     =  more ginger
-float GingerIndex = 1;
-//Example: If you burn in 10 minutes SPF 30 will give you 300 minutes of burning protection from UBV rays.
+//default is 1
+float GingerIndex = 10;
+//Example: If you burn in 10 minutes SPF 30 will give you 300 minutes of burning protection from UVB rays.
 //Input SPF used
+//default is 30
 float SPFIndex = 30;
 //How long you expect your sunscreen to last in seconds
-//3600 =  1 hour 
-int SunScreenDurationSeconds = 3600;
+//default is 3600
+int SunScreenDurationSeconds = 10;
+//How fast you want to recover from sunburn
+//Percent decay per second, as a decimal
+//Default = .01
+float BurnDecay = 1;
 //we assume the person isn't wearing sunscreen (BOOOOO!)
 bool SunScreenApplied = false;
 //Ticks down for every second spent in the sun
@@ -35,8 +39,6 @@ int UVreadIndex = 0;
 float UVtotal = 0;
 float UVaverage = 0;
 int SecondsInSun = 0;
-
-
 
 //UV sensor control
 #include <Wire.h>
@@ -57,7 +59,6 @@ float TotalLEDs = 12;
 //Timing control
 int MeasurementTimer = 0;
 int DisplayTimer = 0;
-
 
 void setup() {
   Serial.begin(115200);
@@ -92,6 +93,11 @@ void setup() {
 }
 
 void loop() {
+  if (Serial.available()) {
+    Serial.read();
+    SunScreenApplied = true;
+    SunScreenTTBTimer = SunScreenDurationSeconds;
+  }
   MeasurementTimer++;
   DisplayTimer++;
 
@@ -117,13 +123,19 @@ void loop() {
   //-----------------Display control (LEDs)------------------
   //Every second
   if (DisplayTimer == 100) {
+    if (SunScreenApplied == true) {
+      SunScreenTTBTimer--;
+      if (SunScreenTTBTimer == 0) {
+        SunScreenApplied = false;
+      }
+    }
     UVaverage = UVtotal / UVnumReadings;
     if (UVaverage < 0.1) {
       //If we see no UV
       UVaverage = 0;
       if (PercentBurned > 0) {
         //Decay percent burned by .1%/Second when no UV
-        PercentBurned = PercentBurned - .001;
+        PercentBurned = PercentBurned - BurnDecay;
       } else {
         //When back to zero, reset all. No burn.
         SecondsInSun = 0;
@@ -132,15 +144,9 @@ void loop() {
     } else {
       //If we see UV, start counting time in sun
       SecondsInSun++;
-      //When sunscreen wears off, Applied=false and reset timer for next application
-      if (SunScreenTTBTimer == 0) {
-        SunScreenApplied = false;
-        SunScreenTTBTimer = SunScreenDurationSeconds;
-      }
       //If sunscreen applied. Start counting down and dividing time to burn by SPFIndex
       if (SunScreenApplied == true) {
         //Math with sunscreen
-        SunScreenTTBTimer--;
         SecondsToBurn = (-267.48 * UVaverage + 3913.6) * SPFIndex;
       } else {
         //Math without sunscreen
@@ -148,7 +154,7 @@ void loop() {
       }
       //Building the new "% burned".
       PercentAddedToBurn = (1 / SecondsToBurn) * 100;
-      PercentBurned = PercentBurned + (PercentAddedToBurn*GingerIndex);
+      PercentBurned = PercentBurned + (PercentAddedToBurn * GingerIndex);
     }
     //Value catching. Dealing with float. Makes 100+ = 100
     if (PercentBurned > 100) {
@@ -196,7 +202,7 @@ void loop() {
           RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
           GreenLEDTimer = 255 - RedLEDTimer;
           pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
-          if(SunScreenApplied){
+          if (SunScreenApplied) {
             PixelLocation++;
             pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 255));
           }
