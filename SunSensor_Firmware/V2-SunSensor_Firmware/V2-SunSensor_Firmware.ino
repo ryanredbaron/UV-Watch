@@ -6,7 +6,36 @@ Lolin WEMOS d1 mini clone
 //  -0.1  =  10% not ginger
 //  0     =  ginger
 //  +0.1  =  10% extra ginger
-int GingerIndex = 50;
+//y = -267.48x + 3913.6
+//Given "x" UV level, "y" returns seconds needed to burn
+//We measure time spent in "x" and calc a "% burned"
+//(Time Spent at UV level)/(-267.48*(UV level)+3913.6) + ginger index
+float GingerIndex = 0;
+
+//Take the time you would normally burn in the sun without protection, 20 minutes will normally produce redness on a light skinned individual.
+//Time To Burn
+float TTB = 10;
+
+//SPF = burning time X SPF Number
+//Example: If you burn in 20 minutes SPF 30 will give you 600 minutes (10 hours) of burning protection from UBV rays.
+//input SPF used
+float SPFIndex = 30;
+
+float SunScreenTTB = SPFIndex * TTB;
+float SunScreenTTBTimer = 3600;
+bool SunScreenApplied = true;
+
+const int UVnumReadings = 10;
+float UVreadings[UVnumReadings];
+int UVreadIndex = 0;
+float UVtotal = 0;
+float UVaverage = 0;
+int SecondsInSun = 0;
+
+float PercentBurned = 0;
+float SecondsToBurn = 0;
+float PercentAddedToBurn = 0;
+float GingerBurn = 0;
 
 #include <Wire.h>
 #include "Adafruit_VEML6075.h"
@@ -27,15 +56,6 @@ int MeasurementTimer = 0;
 int DisplayTimer = 0;
 float CurrentReading = 0;
 
-const int UVnumReadings = 10;
-float UVreadings[UVnumReadings];
-int UVreadIndex = 0;
-float UVtotal = 0;
-float UVaverage = 0;
-
-float PercentBurned = 0;
-int SecondsInSun = 0;
-
 void setup() {
   Serial.begin(115200);
   pixels.begin();
@@ -45,7 +65,10 @@ void setup() {
   delay(100);
   pixels.clear();
   if (!uv.begin()) {
-    pixels.setPixelColor(1, pixels.Color(0, 0, 50));
+    pixels.setPixelColor(0, pixels.Color(0, 0, 50));
+    pixels.setPixelColor(3, pixels.Color(0, 0, 50));
+    pixels.setPixelColor(6, pixels.Color(0, 0, 50));
+    pixels.setPixelColor(9, pixels.Color(0, 0, 50));
     Serial.println("Failed to communicate with VEML6075 sensor, check wiring?");
     while (1) {
       delay(100);
@@ -53,7 +76,10 @@ void setup() {
   }
   Serial.println("Found VEML6075 sensor");
   Serial.println("Program Begin");
-  pixels.setPixelColor(1, pixels.Color(0, 50, 0));
+  pixels.setPixelColor(0, pixels.Color(0, 50, 0));
+  pixels.setPixelColor(3, pixels.Color(0, 50, 0));
+  pixels.setPixelColor(6, pixels.Color(0, 50, 0));
+  pixels.setPixelColor(9, pixels.Color(0, 50, 0));
   pixels.show();
   delay(1000);
   pixels.clear();
@@ -88,19 +114,25 @@ void loop() {
     if (UVaverage < 0.1) {
       UVaverage = 0;
       if (PercentBurned > 0) {
-        PercentBurned = PercentBurned - .01;
+        PercentBurned = PercentBurned - .001;
       } else {
         SecondsInSun = 0;
         pixels.clear();
       }
     } else {
       SecondsInSun++;
-      //y = -267.48x + 3913.6
-      //Given "x" UV level, "y" returns seconds needed to burn
-      //We measure time spent in "x" and calc a "% burned"
-      //(Time Spent at UV level)/(-267.48*(UV level)+3913.6)
-      //+ginger index
-      PercentBurned = (PercentBurned + ((1) / (-267.48 * (UVaverage) + 3913.6)) * 100) + (((1) / (-267.48 * (UVaverage) + 3913.6)) * 100) * GingerIndex;
+      if (SunScreenTTBTimer == 0) {
+        SunScreenApplied = false;
+      }
+      if (SunScreenApplied == true) {
+        SunScreenTTBTimer--;
+        SecondsToBurn = (-267.48 * UVaverage + 3913.6) * SPFIndex;
+      } else {
+        SecondsToBurn = -267.48 * UVaverage + 3913.6;
+      }
+      PercentAddedToBurn = (1 / SecondsToBurn) * 100;
+      GingerBurn = SecondsToBurn * GingerIndex;
+      PercentBurned = PercentBurned + PercentAddedToBurn + GingerBurn;
     }
     if (PercentBurned > 100) {
       PercentBurned = 100;
@@ -117,6 +149,12 @@ void loop() {
     Serial.println(PercentBurned);
     Serial.print("Seconds in sun - ");
     Serial.println(SecondsInSun);
+    Serial.print("Time to Burn (min)- ");
+    Serial.println(((100 / PercentBurned) * SecondsInSun) / 60);
+    Serial.print("Sunscreen applied? - ");
+    Serial.println(SunScreenApplied);
+    Serial.print("Sunscreen left - ");
+    Serial.println(SunScreenTTBTimer);
     Serial.println("----------------");
     if (PercentBurned < 100) {
       /*Full ring
@@ -131,8 +169,8 @@ void loop() {
         pixels.show();
       }
       */
-      for (float PixelLocation = 0; PixelLocation != TotalLEDs; PixelLocation++) {
-        if (PixelLocation == int(TotalLEDs * (PercentBurned / 100))) {
+      for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+        if (PixelLocation == int(TotalLEDs * (PercentBurned / 100)) && PercentBurned > 0) {
           RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
           GreenLEDTimer = 255 - RedLEDTimer;
           pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
@@ -151,7 +189,6 @@ void loop() {
       pixels.setBrightness(LEDBrigthness);
       pixels.show();
     }
-
     DisplayTimer = 0;
   }
   delay(10);
