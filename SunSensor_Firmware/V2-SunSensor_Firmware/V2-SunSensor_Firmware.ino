@@ -11,19 +11,16 @@ Lolin WEMOS d1 mini clone
 //We measure time spent in "x" and calc a "% burned"
 //(Time Spent at UV level)/(-267.48*(UV level)+3913.6) + ginger index
 float GingerIndex = 0;
-
-//Take the time you would normally burn in the sun without protection, 20 minutes will normally produce redness on a light skinned individual.
-//Time To Burn
-float TTB = 10;
-
 //SPF = burning time X SPF Number
 //Example: If you burn in 20 minutes SPF 30 will give you 600 minutes (10 hours) of burning protection from UBV rays.
 //input SPF used
 float SPFIndex = 30;
-
-float SunScreenTTB = SPFIndex * TTB;
-float SunScreenTTBTimer = 3600;
+//How long you expect your sunscreen to last
+int SunScreenDurationSeconds = 3600;
+//we assume the person isn't wearing sunscreen (BOOOOO!)
 bool SunScreenApplied = true;
+//Ticks down for every second spent in the sun
+int SunScreenTTBTimer = SunScreenDurationSeconds;
 
 const int UVnumReadings = 10;
 float UVreadings[UVnumReadings];
@@ -111,36 +108,49 @@ void loop() {
   //-----------------display control------------------
   if (DisplayTimer == 100) {
     UVaverage = UVtotal / UVnumReadings;
+    
     if (UVaverage < 0.1) {
+    //If we see no UV
       UVaverage = 0;
       if (PercentBurned > 0) {
+        //Decay percent burned by .1%/Second when no UV
         PercentBurned = PercentBurned - .001;
       } else {
+        //When back to zero, reset all. No burn.
         SecondsInSun = 0;
         pixels.clear();
       }
     } else {
+    //If we see UV, start counting time in sun
       SecondsInSun++;
+      //When sunscreen wears off, Applied=false and reset timer for next application
       if (SunScreenTTBTimer == 0) {
         SunScreenApplied = false;
+        SunScreenTTBTimer = SunScreenDurationSeconds;
       }
+      //If sunscreen applied. Start counting down and dividing time to burn by SPFIndex
       if (SunScreenApplied == true) {
+        //Math with sunscreen
         SunScreenTTBTimer--;
         SecondsToBurn = (-267.48 * UVaverage + 3913.6) * SPFIndex;
       } else {
+        //Math without sunscreen
         SecondsToBurn = -267.48 * UVaverage + 3913.6;
       }
+      //Building the new "% burned".
       PercentAddedToBurn = (1 / SecondsToBurn) * 100;
       GingerBurn = SecondsToBurn * GingerIndex;
       PercentBurned = PercentBurned + PercentAddedToBurn + GingerBurn;
     }
+    //Value catching. Dealing with float. Makes 100+ = 100
     if (PercentBurned > 100) {
       PercentBurned = 100;
     }
+    //Value catching. Dealing with float. Makes 0- = 0
     if (PercentBurned < 0) {
       PercentBurned = 0;
     }
-
+    //Testing/monitoring
     Serial.print("Actual - ");
     Serial.println(CurrentReading);
     Serial.print("Average - ");
@@ -152,12 +162,13 @@ void loop() {
     Serial.print("Time to Burn (min)- ");
     Serial.println(((100 / PercentBurned) * SecondsInSun) / 60);
     Serial.print("Sunscreen applied? - ");
-    Serial.println(SunScreenApplied);
+    Serial.println(SunScreenApplied ? "Applied" : "None");
     Serial.print("Sunscreen left - ");
     Serial.println(SunScreenTTBTimer);
     Serial.println("----------------");
+    //Checking to make sure we aren't burnt!
     if (PercentBurned < 100) {
-      /*Full ring
+      /*FIll ring. Showing how burnt
       for (float PixelLocation = 0; PixelLocation < (TotalLEDs * (PercentBurned / 100)); PixelLocation++) {
         RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
         GreenLEDTimer = 255 - RedLEDTimer;
@@ -169,6 +180,7 @@ void loop() {
         pixels.show();
       }
       */
+      //One LED at a time. Showing how burnt
       for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
         if (PixelLocation == int(TotalLEDs * (PercentBurned / 100)) && PercentBurned > 0) {
           RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
@@ -180,6 +192,7 @@ void loop() {
           pixels.show();
         }
       }
+    //If we are burnt, we also burn our retinas by flashing bright, bright red
     } else {
       pixels.setBrightness(255);
       for (int PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
