@@ -1,33 +1,31 @@
-/*
-Lolin WEMOS d1 mini clone
-*/
+//Lolin WEMOS d1 mini clone
+
 //y = -267.48x + 3913.6
-//Given "x" UV level, "y" returns seconds needed to burn
-//We measure time spent in "x" and calc a "% burned"
+//Given "x" UV level, "y" returns seconds needed to burn, we measure time spent in "x" and calc a "% burned"
 //(Time Spent at UV level)/(-267.48*(UV level)+3913.6) + ((Time Spent at UV level)/(-267.48*(UV level)+3913.6))*ginger index
-//Increase to burn faster, decrease to be a beautiful tan person
-//  -     = less ginger
-//  1     =  ginger
-//  +     =  more ginger
+//1 = ginger. Increase to burn faster, decrease to be a beautiful tan person
 //default is 1
-float GingerIndex = 10;
-//Example: If you burn in 10 minutes SPF 30 will give you 300 minutes of burning protection from UVB rays.
+float GingerIndex = 100;
 //Input SPF used
 //default is 30
 float SPFIndex = 30;
 //How long you expect your sunscreen to last in seconds
 //default is 3600
-int SunScreenDurationSeconds = 10;
+int SunScreenDurationSeconds = 3600;
 //How fast you want to recover from sunburn
 //Percent decay per second, as a decimal
-//Default = .01
-float BurnDecay = 1;
+//Default = 0.005
+float BurnDecay = 0.005;
+//Mode control, what we want to start on
+//default is 1
+int WatchModeSelect = 1;
+
+
+
 //we assume the person isn't wearing sunscreen (BOOOOO!)
 bool SunScreenApplied = false;
-//Ticks down for every second spent in the sun
-int SunScreenTTBTimer = SunScreenDurationSeconds;
-
 //Variables to help calculate
+int SunScreenTTBTimer = SunScreenDurationSeconds;
 float PercentBurned = 0;
 float SecondsToBurn = 0;
 float PercentAddedToBurn = 0;
@@ -51,14 +49,17 @@ float CurrentReading = 0;
 #define PIN D4
 #define NUMPIXELS 12
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
-int LEDBrigthness = 5;
+int LEDBrigthness = 2;
 int RedLEDTimer = 0;
 int GreenLEDTimer = 0;
+int BlueLEDTimer = 0;
 float TotalLEDs = 12;
 
 //Timing control
 int MeasurementTimer = 0;
 int DisplayTimer = 0;
+
+int RXdata = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -87,16 +88,26 @@ void setup() {
   pixels.setPixelColor(6, pixels.Color(0, 50, 0));
   pixels.setPixelColor(9, pixels.Color(0, 50, 0));
   pixels.show();
-  delay(3000);
+  delay(2000);
   pixels.clear();
   pixels.show();
 }
 
 void loop() {
   if (Serial.available()) {
-    Serial.read();
-    SunScreenApplied = true;
-    SunScreenTTBTimer = SunScreenDurationSeconds;
+    RXdata = Serial.read();
+    switch (RXdata) {
+      case '0':
+        SunScreenApplied = true;
+        SunScreenTTBTimer = SunScreenDurationSeconds;
+        break;
+      case '1':
+        WatchModeSelect = 1;
+        break;
+      case '2':
+        WatchModeSelect = 2;
+        break;
+    }
   }
   MeasurementTimer++;
   DisplayTimer++;
@@ -182,45 +193,59 @@ void loop() {
       Serial.println(SunScreenTTBTimer);
     }
     Serial.println("----------------");
-    //Checking to make sure we aren't burnt!
-    if (PercentBurned < 100) {
-      /*FIll ring. Showing how burnt
-      for (float PixelLocation = 0; PixelLocation < (TotalLEDs * (PercentBurned / 100)); PixelLocation++) {
-        RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
-        GreenLEDTimer = 255 - RedLEDTimer;
-        pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
-        pixels.show();
-      }
-      for (float PixelLocation = TotalLEDs; PixelLocation >= (TotalLEDs * (PercentBurned / 100)); PixelLocation--) {
-        pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
-        pixels.show();
-      }
-      */
-      //One LED at a time. Showing how burnt
-      for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
-        if (PixelLocation == int(TotalLEDs * (PercentBurned / 100)) && PercentBurned > 0) {
-          RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
-          GreenLEDTimer = 255 - RedLEDTimer;
-          pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
-          if (SunScreenApplied) {
-            PixelLocation++;
-            pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 255));
+    switch (WatchModeSelect) {
+      //Percent burend display
+      case 1:
+        //Checking to make sure we aren't burnt!
+        if (PercentBurned < 100) {
+          //One LED at a time. Showing how burnt
+          for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+            if (PixelLocation == int(TotalLEDs * (PercentBurned / 100)) && PercentBurned > 0) {
+              RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
+              GreenLEDTimer = 255 - RedLEDTimer;
+              pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
+              if (SunScreenApplied) {
+                for (int i = 0; i < (SunScreenTTBTimer / 900) + 1; i++) {
+                  PixelLocation++;
+                  if (PixelLocation < 12) {
+                    pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 255));
+                  } else {
+                    pixels.setPixelColor(PixelLocation - 12, pixels.Color(0, 0, 255));
+                  }
+                }
+              }
+            } else {
+              pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
+            }
           }
           pixels.show();
+          //If we are burnt, we also burn our retinas by flashing bright, bright red
         } else {
-          pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
+          pixels.setBrightness(255);
+          for (int PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+            pixels.setPixelColor(PixelLocation, pixels.Color(255, 0, 0));
+            pixels.show();
+          }
+          pixels.setBrightness(LEDBrigthness);
           pixels.show();
         }
-      }
-      //If we are burnt, we also burn our retinas by flashing bright, bright red
-    } else {
-      pixels.setBrightness(255);
-      for (int PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
-        pixels.setPixelColor(PixelLocation, pixels.Color(255, 0, 0));
-        pixels.show();
-      }
-      pixels.setBrightness(LEDBrigthness);
-      pixels.show();
+        break;
+      //UV display
+      case 2:
+        for (float PixelLocation = 0; PixelLocation != TotalLEDs; PixelLocation++) {
+          if (PixelLocation <= UVaverage && UVaverage != 0) {
+            RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
+            GreenLEDTimer = 255 - RedLEDTimer;
+            pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
+          } else {
+            pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
+          }
+          pixels.show();
+        }
+        break;
+      default:
+        // statements
+        break;
     }
     DisplayTimer = 0;
   }
