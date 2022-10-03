@@ -2,22 +2,24 @@
 Lolin WEMOS d1 mini clone
 */
 
-//Increase to burn faster, decrease to be a beautiful tan person
-//  -0.1  =  10% not ginger
-//  0     =  ginger
-//  +0.1  =  10% extra ginger
+
 //y = -267.48x + 3913.6
 //Given "x" UV level, "y" returns seconds needed to burn
 //We measure time spent in "x" and calc a "% burned"
-//(Time Spent at UV level)/(-267.48*(UV level)+3913.6) + ginger index
-float GingerIndex = 0;
-//Example: If you burn in 20 minutes SPF 30 will give you 600 minutes (10 hours) of burning protection from UBV rays.
-//input SPF used
+//(Time Spent at UV level)/(-267.48*(UV level)+3913.6) + ((Time Spent at UV level)/(-267.48*(UV level)+3913.6))*ginger index
+//Increase to burn faster, decrease to be a beautiful tan person
+//  -     = less ginger
+//  1     =  ginger
+//  +     =  more ginger
+float GingerIndex = 1;
+//Example: If you burn in 10 minutes SPF 30 will give you 300 minutes of burning protection from UBV rays.
+//Input SPF used
 float SPFIndex = 30;
 //How long you expect your sunscreen to last in seconds
+//3600 =  1 hour 
 int SunScreenDurationSeconds = 3600;
 //we assume the person isn't wearing sunscreen (BOOOOO!)
-bool SunScreenApplied = true;
+bool SunScreenApplied = false;
 //Ticks down for every second spent in the sun
 int SunScreenTTBTimer = SunScreenDurationSeconds;
 
@@ -25,7 +27,6 @@ int SunScreenTTBTimer = SunScreenDurationSeconds;
 float PercentBurned = 0;
 float SecondsToBurn = 0;
 float PercentAddedToBurn = 0;
-float GingerBurn = 0;
 
 //Average UV stuffs.
 const int UVnumReadings = 10;
@@ -145,8 +146,7 @@ void loop() {
       }
       //Building the new "% burned".
       PercentAddedToBurn = (1 / SecondsToBurn) * 100;
-      GingerBurn = SecondsToBurn * GingerIndex;
-      PercentBurned = PercentBurned + PercentAddedToBurn + GingerBurn;
+      PercentBurned = PercentBurned + (PercentAddedToBurn*GingerIndex);
     }
     //Value catching. Dealing with float. Makes 100+ = 100
     if (PercentBurned > 100) {
@@ -157,9 +157,7 @@ void loop() {
       PercentBurned = 0;
     }
     //Testing/monitoring
-    Serial.print("Actual - ");
-    Serial.println(CurrentReading);
-    Serial.print("Average - ");
+    Serial.print("Average UV - ");
     Serial.println(UVaverage);
     Serial.print("% burned - ");
     Serial.println(PercentBurned);
@@ -171,8 +169,10 @@ void loop() {
     }
     Serial.print("Sunscreen applied? - ");
     Serial.println(SunScreenApplied ? "Applied" : "None");
-    Serial.print("Sunscreen left - ");
-    Serial.println(SunScreenTTBTimer);
+    if (SunScreenApplied) {
+      Serial.print("Sunscreen left - ");
+      Serial.println(SunScreenTTBTimer);
+    }
     Serial.println("----------------");
     //Checking to make sure we aren't burnt!
     if (PercentBurned < 100) {
@@ -194,6 +194,10 @@ void loop() {
           RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
           GreenLEDTimer = 255 - RedLEDTimer;
           pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
+          if(SunScreenApplied){
+            PixelLocation++;
+            pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 255));
+          }
           pixels.show();
         } else {
           pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
