@@ -5,7 +5,7 @@
 //(Time Spent at UV level)/(-267.48*(UV level)+3913.6) + ((Time Spent at UV level)/(-267.48*(UV level)+3913.6))*ginger index
 //1 = ginger. Increase to burn faster, decrease to be a beautiful tan person
 //default is 1
-float GingerIndex = 100;
+float GingerIndex = 1;
 //Input SPF used
 //default is 30
 float SPFIndex = 30;
@@ -58,6 +58,7 @@ float TotalLEDs = 12;
 //Timing control
 int MeasurementTimer = 0;
 int DisplayTimer = 0;
+int DisplayModeTimer = 0;
 
 int RXdata = 0;
 
@@ -94,6 +95,10 @@ void setup() {
 }
 
 void loop() {
+  MeasurementTimer++;
+  DisplayTimer++;
+  DisplayModeTimer++;
+
   if (Serial.available()) {
     RXdata = Serial.read();
     switch (RXdata) {
@@ -109,9 +114,14 @@ void loop() {
         break;
     }
   }
-  MeasurementTimer++;
-  DisplayTimer++;
-
+  if (DisplayModeTimer == 1000) {
+    if (WatchModeSelect == 1) {
+      WatchModeSelect = 2;
+    } else {
+      WatchModeSelect = 1;
+    }
+    DisplayModeTimer = 0;
+  }
   //-----------------Avg measurement control------------------
   //Every 10th of a second
   if (MeasurementTimer == 10) {
