@@ -54,7 +54,7 @@ float TotalLEDs = NUMPIXELS;
 extern int8_t accelInit();
 //Run in accel.ino, not used here
 extern void accelRead();
-//changes global variable lefthanded BOOL (int) 0-1
+//changes global variable ZeroAtTwelve BOOL (int) 0-1
 extern bool orientDisplay();
 //Setup comms
 #define I2C_WRITE 0
@@ -64,7 +64,7 @@ uint16_t aOrient;
 uint8_t gotAccel = 0;
 uint16_t aShake;
 uint16_t notMoving = 0;
-uint8_t lefthanded = 0;
+uint8_t ZeroAtTwelve = 0;
 
 //------------------RH Algo-------------
 //we assume the person isn't wearing sunscreen (BOOOOO!)
@@ -108,16 +108,34 @@ int SensorCaptureTrigger = 10;
 int DisplayTimer = 0;
 int DisplayTimerTrigger = 100;
 
+int MoCapTimer = 0;
+int MoCapTimerTrigger = 1;
+
 void loop() {
   SensorCaptureTimer++;
   DisplayTimer++;
+  MoCapTimer++;
+
+  //-----------------------------Motion CAPTURE---------------------------------------
+  if (MoCapTimer >= MoCapTimerTrigger) {
+    orientDisplay();
+    if (ZeroAtTwelve) {
+      WatchModeSelect = 1;
+    } else {
+      WatchModeSelect = 2;
+    }
+    MoCapTimer = 0;
+  }
+  //----------------------------------------------------------------------------------
+
+
 
   //-----------------------------SENSOR CAPTURE---------------------------------------
   if (SensorCaptureTimer >= SensorCaptureTrigger) {
     counts = analogRead(UV_PIN);
-    voltage = counts * 3300;
+    voltage = counts * 3300 * 5;
     voltage /= 1024;
-    CurrentReading = ((voltage - 104) / 98);
+    CurrentReading = ((voltage - 108) / 97);
     if (CurrentReading > 12) {
       CurrentReading = 12;
     }
@@ -135,16 +153,10 @@ void loop() {
   }
   //--------------------------------------------------------------------
 
+
+
   //-------------------------------DISPLAY-------------------------------------
   if (DisplayTimer >= DisplayTimerTrigger) {
-    //----Orientation----
-    orientDisplay();
-    if (lefthanded) {
-      WatchModeSelect = 1;
-    } else {
-      WatchModeSelect = 2;
-    }
-
     if (SunScreenApplied == true) {
       SunScreenTTBTimer--;
       if (SunScreenTTBTimer == 0) {
@@ -247,7 +259,7 @@ void loop() {
           if (PixelLocation <= UVaverage && UVaverage != 0) {
             RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
             GreenLEDTimer = 255 - RedLEDTimer;
-            pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
+            pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, 0, GreenLEDTimer));
           } else {
             pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
           }
@@ -261,6 +273,8 @@ void loop() {
     DisplayTimer = 0;
   }
   //--------------------------------------------------------------------
+
+
 
   delay(LoopDelay);
 }

@@ -83,8 +83,8 @@ bool orientDisplay() {
   //   1       0        -X
   //   1       1        -Y
   
-  if ( (aOrient & 0x30) == 0x00) lefthanded = 0;          // +X
-  if ( (aOrient & 0x30) == 0x20) lefthanded = 1;          // -X
+  if ( (aOrient & 0x30) == 0x00) ZeroAtTwelve = 1;          // +X
+  if ( (aOrient & 0x30) == 0x20) ZeroAtTwelve = 0;          // -X
 
   return( (aShake & 0xC00) == 0);           // 0 == No change in XY or Z
 }
