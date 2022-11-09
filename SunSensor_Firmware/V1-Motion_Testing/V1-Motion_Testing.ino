@@ -34,24 +34,25 @@ uint16_t notMoving = 0;
 uint8_t gotAccel = 0;
 uint8_t lefthanded = 0;
 
-#define ON 255
-uint8_t red = 0;
-uint8_t green = 0;
-uint8_t blue = ON;
+#define ON 50
+#define OFF 0
+uint8_t red = OFF;
+uint8_t green = OFF;
+uint8_t blue = OFF;
 
 uint8_t nled;
+
+int PreviousX;
+int CurrentX;
+
+int PreviousY;
+int CurrentY;
 
 int PreviousZ;
 int CurrentZ;
 
 void setup() {
   Serial.begin(115200);
-  Serial.println();
-  Serial.println();
-  Serial.println();
-  Serial.println();
-  Serial.println("UV Watch");
-  Serial.println();
 
   TinyI2C.init();  // Not in the library desc.!! Only in examples...
   pixels.begin();  // Initializes tinyNeoPixel library.
@@ -61,19 +62,23 @@ void setup() {
   // bool shakeMode, uint8_t shakeThreshold, uint8_t shakeCount, uint8_t orientationCount
   gotAccel = accelBegin(0, 0, 0, 0);
 
-  if (gotAccel) Serial.println("MXC4005 found...");
-  else Serial.println("MXC4005 not found...");
-  Serial.println();
+  for (int i = 0; i < NUMPIXELS; i++) {
+    pixels.setPixelColor(i, pixels.Color(OFF, ON, OFF));
+    delay(1);
+  }
+  pixels.show();
 }
 
 int SensorCaptureTimer = 0;
 int SensorCaptureTrigger = 10;
 
 int DisplayTimer = 0;
-int DisplayTimerTrigger = 100;
+int DisplayTimerTrigger = 500;
 
 int MoCapTimer = 0;
 int MoCapTimerTrigger = 1;
+
+int TapCount;
 
 void loop() {
   SensorCaptureTimer++;
@@ -88,20 +93,26 @@ void loop() {
   //-----------------------------Motion CAPTURE---------------------------------------
   if (MoCapTimer >= MoCapTimerTrigger) {
     uint8_t xyzt = accelXYZT();
+
+    PreviousX = CurrentX;
+    CurrentX = accelX();
+    int DeltaX = CurrentX - PreviousX;
+
+    PreviousY = CurrentY;
+    CurrentY = accelY();
+    int DeltaY = CurrentY - PreviousY;
+
     PreviousZ = CurrentZ;
     CurrentZ = accelZ();
-    if ((CurrentZ - PreviousZ) > 1000 || (CurrentZ - PreviousZ) < -1000) {
-      Serial.print("Delta:");
-      Serial.print(CurrentZ - PreviousZ);
-      Serial.print("X:");
-      Serial.print(accelX());
-      Serial.print(",");
-      Serial.print("Y:");
-      Serial.print(accelY());
-      Serial.print(",");
-      Serial.print("Z:");
-      Serial.println(accelZ());
-    };
+    int DeltaZ = CurrentZ - PreviousZ;
+
+    int XYTrigger = 250;
+    int ZTrigger = -250;
+
+    if (CurrentZ < 0 && DeltaZ < ZTrigger && (DeltaX < XYTrigger && DeltaX > (XYTrigger * -1)) && (DeltaY < XYTrigger && DeltaY > (XYTrigger * -1))) {
+      TapCount++;
+      DisplayTimer = 0;
+    }
 
     MoCapTimer = 0;
   }
@@ -119,27 +130,17 @@ void loop() {
 
   //-------------------------------DISPLAY-------------------------------------
   if (DisplayTimer >= DisplayTimerTrigger) {
-    nled = 6;
     for (int i = 0; i < NUMPIXELS; i++) {
-      if (i == nled) {
-        pixels.setPixelColor(nled, pixels.Color(red, green, blue));
+      if (i < TapCount && TapCount > 0) {
+        pixels.setPixelColor(i, pixels.Color(OFF, ON, ON));
       } else {
-        pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+        pixels.setPixelColor(i, pixels.Color(OFF, OFF, OFF));
       }
       delay(1);
     }
     pixels.show();
+    TapCount = 0;
 
-    orientDisplay();
-    if (lefthanded) {
-      green = 0;
-      red = ON;
-      blue = 0;
-    } else {
-      red = 0;
-      green = ON;
-      blue = 0;
-    }
     DisplayTimer = 0;
   }
   //--------------------------------------------------------------------
