@@ -85,10 +85,6 @@ float UVaverage = 0;
 int SecondsInSun = 0;
 float CurrentReading = 0;
 
-//MS to loop for delay.
-//**Do not edit (dire consequences)**
-int LoopDelay = 10;
-
 void setup() {
   Serial.begin(9600);
   Serial.println();
@@ -103,6 +99,10 @@ void setup() {
 
   gotAccel = accelInit();
 }
+
+//MS to loop for delay.
+//**Do not edit (dire consequences)**
+int LoopDelay = 10;
 
 int SensorCaptureTimer = 0;
 int SensorCaptureTrigger = 10;
