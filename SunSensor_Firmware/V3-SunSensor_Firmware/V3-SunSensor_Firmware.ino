@@ -23,6 +23,7 @@ float BurnDecay = 0.005;
 int WatchModeSelect = 1;
 //LED Brightness
 int LEDBrigthness = 10;
+int adjustableLEDBrigthness = 10;
 
 //------------------Mark UV-------------
 // Adafruit says voltage/0.1V = UV index
@@ -30,6 +31,7 @@ int LEDBrigthness = 10;
 #define UV_PIN PIN_PA2
 float counts;
 float voltage;
+float voltageoffset = 0.33;
 
 //------------------Mark Neo-------------
 // NeoPixel Pin
@@ -133,8 +135,7 @@ void loop() {
   //-----------------------------SENSOR CAPTURE---------------------------------------
   if (SensorCaptureTimer >= SensorCaptureTrigger) {
     counts = analogRead(UV_PIN);
-    voltage = counts * 3300 * 5;
-    voltage /= 1024;
+    voltage = ((counts * 3300 * 5) / 1024) * voltageoffset;
     CurrentReading = ((voltage - 108) / 97);
     if (CurrentReading > 12) {
       CurrentReading = 12;
@@ -149,6 +150,8 @@ void loop() {
     if (UVreadIndex >= UVnumReadings) {
       UVreadIndex = 0;
     }
+    adjustableLEDBrigthness = (LEDBrigthness * CurrentReading) + LEDBrigthness;
+    pixels.setBrightness(adjustableLEDBrigthness);
     SensorCaptureTimer = 0;
   }
   //--------------------------------------------------------------------
@@ -219,6 +222,7 @@ void loop() {
     switch (WatchModeSelect) {
       //Percent burend display
       case 1:
+        pixels.clear();
         //Checking to make sure we aren't burnt!
         if (PercentBurned < 100) {
           //One LED at a time. Showing how burnt
@@ -240,6 +244,7 @@ void loop() {
             } else {
               pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
             }
+            delay(1);
           }
           pixels.show();
           //If we are burnt, we also burn our retinas by flashing bright, bright red
@@ -247,7 +252,7 @@ void loop() {
           pixels.setBrightness(255);
           for (int PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
             pixels.setPixelColor(PixelLocation, pixels.Color(255, 0, 0));
-            pixels.show();
+            delay(1);
           }
           pixels.setBrightness(LEDBrigthness);
           pixels.show();
@@ -255,7 +260,8 @@ void loop() {
         break;
       //UV display
       case 2:
-        for (float PixelLocation = 0; PixelLocation != TotalLEDs; PixelLocation++) {
+        pixels.clear();
+        for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
           if (PixelLocation <= UVaverage && UVaverage != 0) {
             RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
             GreenLEDTimer = 255 - RedLEDTimer;
@@ -263,8 +269,9 @@ void loop() {
           } else {
             pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
           }
-          pixels.show();
+          delay(1);
         }
+        pixels.show();
         break;
       default:
         // statements
