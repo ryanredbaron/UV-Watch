@@ -7,7 +7,7 @@
 //(Time Spent at UV level)/(-267.48*(UV level)+3913.6) + ((Time Spent at UV level)/(-267.48*(UV level)+3913.6))*ginger index
 //1 = ginger. Increase to burn faster, decrease to be a beautiful tan person
 //default is 1
-float GingerIndex = 1;
+float GingerIndex = 100;
 //Input SPF used
 //default is 30
 float SPFIndex = 30;
@@ -17,13 +17,13 @@ int SunScreenDurationSeconds = 3600;
 //How fast you want to recover from sunburn
 //Percent decay per second, as a decimal
 //Default = 0.005
-float BurnDecay = 0.005;
+float BurnDecay = 1;
 //Mode control, what we want to start on
 //default is 1
 int WatchModeSelect = 1;
 //LED Brightness
 int LEDBrigthness = 10;
-int adjustableLEDBrigthness = 10;
+int adjustableLEDBrigthness = LEDBrigthness;
 
 //------------------SunBurn Algo Setup-------------
 //we assume the person isn't wearing sunscreen (BOOOOO!)
@@ -31,6 +31,7 @@ bool SunScreenApplied = false;
 //Variables to help calculate
 int SunScreenTTBTimer = SunScreenDurationSeconds;
 float PercentBurned = 0;
+float DisplayPercentBurned = 0;
 float SecondsToBurn = 0;
 float PercentAddedToBurn = 0;
 //Average UV stuffs.
@@ -62,6 +63,7 @@ int RedLEDTimer = 0;
 int GreenLEDTimer = 0;
 int BlueLEDTimer = 0;
 float TotalLEDs = NUMPIXELS;
+int NeoPixelArray[NUMPIXELS][3];
 
 //------------------Accel Setup-------------
 //Initialize accel, setting up
@@ -165,8 +167,10 @@ void loop() {
         LowerButtonPressedTimer = 0;
       }
     }
-    InputTimer = 0;
     */
+    //----DO NOT REMOVE----
+    InputTimer = 0;
+    //----DO NOT REMOVE----
   }
   //----------------------------------------------------------------------------------
 
@@ -198,7 +202,9 @@ void loop() {
     adjustableLEDBrigthness = (LEDBrigthness * (CurrentReading * 2)) + LEDBrigthness;
     pixels.setBrightness(adjustableLEDBrigthness);
     PreviousReading = CurrentReading;
+    //----DO NOT REMOVE----
     SensorCaptureTimer = 0;
+    //----DO NOT REMOVE----
   }
   //--------------------------------------------------------------------
 
@@ -239,13 +245,13 @@ void loop() {
       PercentAddedToBurn = (1 / SecondsToBurn) * 100;
       PercentBurned = PercentBurned + (PercentAddedToBurn * GingerIndex);
     }
-    //Value catching. Dealing with float. Makes 100+ = 100
-    if (PercentBurned > 100) {
-      PercentBurned = 100;
-    }
+
     //Value catching. Dealing with float. Makes 0- = 0
     if (PercentBurned < 0) {
       PercentBurned = 0;
+    }
+    if (PercentBurned > 200) {
+      PercentBurned = 200;
     }
     //Testing/monitoring
     Serial.print("Average UV - ");
@@ -266,64 +272,118 @@ void loop() {
     }
     Serial.println("----------------");
     switch (WatchModeSelect) {
-      //Percent burend display
+      //Percent burned display
       case 1:
-        pixels.clear();
-        //Checking to make sure we aren't burnt!
-        if (PercentBurned < 100) {
-          //One LED at a time. Showing how burnt
-          for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
-            if (PixelLocation == int(TotalLEDs * (PercentBurned / 100)) && PercentBurned > 0) {
+        //Loop through pixels
+        for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+          //Check if we are over 100%
+          if (PercentBurned < 100) {
+            DisplayPercentBurned = PercentBurned;
+          } else {
+            //if we are, then subtract 100 to display correctly
+            DisplayPercentBurned = PercentBurned - 100;
+          }
+          //If we've reached 2x burned, pray for God
+          if (PercentBurned == 200) {
+            NeoPixelArray[0][0] = 255;
+            NeoPixelArray[3][0] = 255;
+            NeoPixelArray[6][0] = 255;
+            NeoPixelArray[9][0] = 255;
+          }
+          //only enter here if the current pixel we care about is active in the loop
+          if (PixelLocation == int(TotalLEDs * (DisplayPercentBurned / 100)) && DisplayPercentBurned > 0) {
+            if (PercentBurned < 100) {
+              //If we aren't over burned, show normally.
               RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
               GreenLEDTimer = 255 - RedLEDTimer;
-              pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, GreenLEDTimer, 0));
-              if (SunScreenApplied) {
-                for (int i = 0; i < (SunScreenTTBTimer / 900) + 1; i++) {
-                  PixelLocation++;
-                  if (PixelLocation < 12) {
-                    pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 255));
-                  } else {
-                    pixels.setPixelColor(PixelLocation - 12, pixels.Color(0, 0, 255));
-                  }
+              BlueLEDTimer = 0;
+            } else {
+              //If we are over burned then show red
+              RedLEDTimer = 255;
+              GreenLEDTimer = 0;
+              BlueLEDTimer = 0;
+              NeoPixelArray[int(PixelLocation - 1)][0] = RedLEDTimer;
+              NeoPixelArray[int(PixelLocation - 1)][1] = GreenLEDTimer + 40;
+              NeoPixelArray[int(PixelLocation - 1)][2] = BlueLEDTimer;
+              NeoPixelArray[int(PixelLocation - 2)][0] = RedLEDTimer;
+              NeoPixelArray[int(PixelLocation - 2)][1] = GreenLEDTimer + 80;
+              NeoPixelArray[int(PixelLocation - 2)][2] = BlueLEDTimer;
+            }
+            NeoPixelArray[int(PixelLocation)][0] = RedLEDTimer;
+            NeoPixelArray[int(PixelLocation)][1] = GreenLEDTimer;
+            NeoPixelArray[int(PixelLocation)][2] = BlueLEDTimer;
+            if (SunScreenApplied) {
+              for (int i = 0; i < (SunScreenTTBTimer / 900) + 1; i++) {
+                PixelLocation++;
+                if (PixelLocation < 12) {
+                  NeoPixelArray[int(PixelLocation)][0] = 0;
+                  NeoPixelArray[int(PixelLocation)][1] = 0;
+                  NeoPixelArray[int(PixelLocation)][2] = 255;
+                } else {
+                  NeoPixelArray[int(PixelLocation - 12)][0] = 0;
+                  NeoPixelArray[int(PixelLocation - 12)][1] = 0;
+                  NeoPixelArray[int(PixelLocation - 12)][2] = 255;
                 }
               }
-            } else {
-              pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
             }
-            delay(1);
           }
-          pixels.show();
-          //If we are burnt, we also burn our retinas by flashing bright, bright red
-        } else {
-          pixels.setBrightness(255);
-          for (int PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
-            pixels.setPixelColor(PixelLocation, pixels.Color(255, 0, 0));
-            delay(1);
-          }
-          pixels.setBrightness(LEDBrigthness);
-          pixels.show();
         }
-        break;
+        break;  //----DO NOT REMOVE----
       //UV display
       case 2:
-        pixels.clear();
         for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
           if (PixelLocation <= UVaverage && UVaverage != 0) {
             RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
-            GreenLEDTimer = 255 - RedLEDTimer;
-            pixels.setPixelColor(PixelLocation, pixels.Color(RedLEDTimer, 0, GreenLEDTimer));
-          } else {
-            pixels.setPixelColor(PixelLocation, pixels.Color(0, 0, 0));
+            GreenLEDTimer = 0;
+            BlueLEDTimer = 255 - RedLEDTimer;
+            NeoPixelArray[int(PixelLocation)][0] = RedLEDTimer;
+            NeoPixelArray[int(PixelLocation)][1] = GreenLEDTimer;
+            NeoPixelArray[int(PixelLocation)][2] = BlueLEDTimer;
           }
-          delay(1);
         }
-        pixels.show();
-        break;
+        break;  //----DO NOT REMOVE----
+      case 3:
+        for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+          NeoPixelArray[int(PixelLocation)][0] = 255;
+          NeoPixelArray[int(PixelLocation)][1] = 0;
+          NeoPixelArray[int(PixelLocation)][2] = 0;
+          pixels.setBrightness(255);
+        }
+        break;  //----DO NOT REMOVE----
+      case 4:
+        for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+          NeoPixelArray[int(PixelLocation)][0] = 150;
+          NeoPixelArray[int(PixelLocation)][1] = 255;
+          NeoPixelArray[int(PixelLocation)][2] = 255;
+          pixels.setBrightness(255);
+        }
+        break;  //----DO NOT REMOVE----
+      case 5:
+        RedLEDTimer = random(0, 200);
+        GreenLEDTimer = random(0, 200);
+        BlueLEDTimer = random(0, 200);
+        for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+          NeoPixelArray[int(PixelLocation)][0] = RedLEDTimer;
+          NeoPixelArray[int(PixelLocation)][1] = GreenLEDTimer;
+          NeoPixelArray[int(PixelLocation)][2] = BlueLEDTimer;
+        }
+        break;  //----DO NOT REMOVE----
       default:
         WatchModeSelect = 1;
-        break;
+        break;  //----DO NOT REMOVE----
     }
+    //Loop through all color selections and display
+    for (int PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+      pixels.setPixelColor(PixelLocation, pixels.Color(NeoPixelArray[PixelLocation][0], NeoPixelArray[PixelLocation][1], NeoPixelArray[PixelLocation][2]));
+      NeoPixelArray[PixelLocation][0] = 0;
+      NeoPixelArray[PixelLocation][1] = 0;
+      NeoPixelArray[PixelLocation][2] = 0;
+      delay(1);
+    }
+    pixels.show();
+    //----DO NOT REMOVE----
     DisplayTimer = 0;
+    //----DO NOT REMOVE----
   }
   //--------------------------------------------------------------------
 
