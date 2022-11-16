@@ -343,7 +343,7 @@ void loop() {
                 NeoPixelArray[9][0] = 255;
               }
               //only enter here if the current pixel we care about is active in the loop
-              if (PixelLocation == int(TotalLEDs * (DisplayPercentBurned / 100)) && PercentBurned > 0) {
+              if (PixelLocation == int(TotalLEDs * (DisplayPercentBurned / 100))) {
                 if (PercentBurned < 100) {
                   //If we aren't over burned, show normally.
                   RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
