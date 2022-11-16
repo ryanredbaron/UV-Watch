@@ -7,7 +7,7 @@
 //(Time Spent at UV level)/(-267.48*(UV level)+3913.6) + ((Time Spent at UV level)/(-267.48*(UV level)+3913.6))*ginger index
 //1 = ginger. Increase to burn faster, decrease to be a beautiful tan person
 //default is 1
-float GingerIndex = 1;
+float GingerIndex = 100;
 //Input SPF used
 //default is 30
 float SPFIndex = 30;
@@ -17,7 +17,7 @@ int SunScreenDurationSeconds = 3600;
 //How fast you want to recover from sunburn
 //Percent decay per second, as a decimal
 //Default = 0.005
-float BurnDecay = 0.005;
+float BurnDecay = 1;
 //Mode control, what we want to start on
 //default is 1
 int WatchModeSelect = 1;
@@ -38,7 +38,7 @@ float DisplayPercentBurned = 0;
 float SecondsToBurn = 0;
 float PercentAddedToBurn = 0;
 //Average UV stuffs.
-const int UVnumReadings = 10;
+const int UVnumReadings = 50;
 float UVreadings[UVnumReadings];
 int UVreadIndex = 0;
 float UVtotal = 0;
@@ -265,7 +265,6 @@ void loop() {
       } else {
         //When back to zero, reset all. No burn.
         SecondsInSun = 0;
-        pixels.clear();
       }
     } else {
       //If we see UV, start counting time in sun
