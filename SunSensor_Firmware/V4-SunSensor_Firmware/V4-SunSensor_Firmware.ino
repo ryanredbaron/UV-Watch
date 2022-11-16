@@ -159,6 +159,7 @@ void loop() {
 
   //---------------------------------------INPUT CAPTURE-----------------------------------------
   if (InputTimer >= InputTimerTrigger) {
+    orientDisplay();
     /*
     orientDisplay();
     if (!ZeroAtTwelve) {
@@ -222,9 +223,9 @@ void loop() {
     if (UVreadIndex >= UVnumReadings) {
       UVreadIndex = 0;
     }
-    adjustableLEDBrigthness = (LEDBrigthness * (CurrentReading * 2)) + LEDBrigthness;
+    //adjustableLEDBrigthness = (LEDBrigthness * (CurrentReading * 2)) + LEDBrigthness;
+    adjustableLEDBrigthness = map(CurrentReading, 0, 12, 1, 255);
     pixels.setBrightness(adjustableLEDBrigthness);
-    PreviousReading = CurrentReading;
 
     BatteryVoltage = (map(analogRead(BATT_READ), 0, 1024, 0, 660));
     //BatteryVoltage = 400;
@@ -314,6 +315,9 @@ void loop() {
   if (DisplayTimer >= DisplayTimerTrigger) {
     switch (WatchModeSelect) {
       case 1:
+        if (!ZeroAtTwelve) {
+          break;
+        }
         switch (WatchSubModeSelect) {
           case 1:
             //Percent burned display
@@ -395,7 +399,7 @@ void loop() {
             //Battery voltage
             for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
               if (PixelLocation < BatteryVoltageRing) {
-                if (BatteryVoltage <= 3.7) {
+                if (PixelLocation <= 3.7) {
                   NeoPixelArray[int(PixelLocation)][0] = 255;
                   NeoPixelArray[int(PixelLocation)][1] = 0;
                   NeoPixelArray[int(PixelLocation)][2] = 0;
