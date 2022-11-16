@@ -216,9 +216,10 @@ void loop() {
     PreviousReading = CurrentReading;
 
     BatteryVoltage = (map(analogRead(BATT_READ), 0, 1024, 0, 660));
-    //BatteryVoltage = 420;
-    BatteryVoltageRing = (map(BatteryVoltage, 330, 420, 0, 11));
+    //BatteryVoltage = 400;
+    BatteryVoltageRing = (map(BatteryVoltage, 330, 400, 0, 12));
     BatteryVoltage = BatteryVoltage / 100;
+    
     //----DO NOT REMOVE----
     SensorCaptureTimer = 0;
     //----DO NOT REMOVE----
@@ -371,7 +372,7 @@ void loop() {
             //Battery voltage
             for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
               if (PixelLocation < BatteryVoltageRing) {
-                if (BatteryVoltage < 4) {
+                if (BatteryVoltage <= 3.7) {
                   NeoPixelArray[int(PixelLocation)][0] = 255;
                   NeoPixelArray[int(PixelLocation)][1] = 0;
                   NeoPixelArray[int(PixelLocation)][2] = 0;
