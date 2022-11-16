@@ -96,8 +96,7 @@ int LowerButtonPressedTimer = 0;
 
 //------------------Voltage Setup-------------
 #define BATT_READ PIN_PA1
-uint32_t BatteryVoltage;
-uint32_t BatteryCounts;
+float BatteryVoltage;
 
 //------------------Vibrator Setup-------------
 #define VIBE_LED PIN_PA5
@@ -215,11 +214,8 @@ void loop() {
     pixels.setBrightness(adjustableLEDBrigthness);
     PreviousReading = CurrentReading;
 
-    BatteryCounts = analogRead(BATT_READ);
-    BatteryVoltage = BatteryCounts * 3300;
-    BatteryVoltage /= 1024;
-    BatteryVoltage *= 2;  // 0 ... 3300
-    BatteryVoltage /= 290;
+    //BatteryVoltage = analogRead(BATT_READ) * (5.0 / 1023.0);
+    BatteryVoltage = map(analogRead(BATT_READ), 0, 511, 0, 11);
     //----DO NOT REMOVE----
     SensorCaptureTimer = 0;
     //----DO NOT REMOVE----
