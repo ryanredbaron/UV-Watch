@@ -125,25 +125,39 @@ void setup() {
   digitalWrite(VIBE_LED, 0);
 }
 
-//MS to loop for delay.
+//------Just don't edit any of this OK?-----
 //**Do not edit (dire consequences)**
 int LoopDelay = 10;
 
+int InputTimer = 0;
+//**Do not edit (dire consequences)**
+int InputTimerTrigger = 1;
+
 int SensorCaptureTimer = 0;
+//**Do not edit (dire consequences)**
 int SensorCaptureTrigger = 10;
 
 int DisplayTimer = 0;
+//**Do not edit (dire consequences)**
 int DisplayTimerTrigger = 10;
 
-int InputTimer = 0;
-int InputTimerTrigger = 1;
+int CalcTimer = 0;
+//**Do not edit (dire consequences)**
+int CalcTimerTrigger = 100;
+//------------------------------------------
+
 
 void loop() {
   SensorCaptureTimer++;
   DisplayTimer++;
   InputTimer++;
+  CalcTimer++;
 
-  //-----------------------------INPUT CAPTURE---------------------------------------
+
+
+
+
+  //---------------------------------------INPUT CAPTURE-----------------------------------------
   if (InputTimer >= InputTimerTrigger) {
     /*
     orientDisplay();
@@ -184,11 +198,12 @@ void loop() {
     InputTimer = 0;
     //----DO NOT REMOVE----
   }
-  //----------------------------------------------------------------------------------
+  //---------------------------------------------------------------------------------------------
 
 
 
-  //-----------------------------SENSOR CAPTURE---------------------------------------
+
+  //-----------------------------------------SENSOR CAPTURE----------------------------------------
   if (SensorCaptureTimer >= SensorCaptureTrigger) {
     counts = analogRead(UV_PIN);
     UVSensorVoltage = ((counts * 3300 * 5) / 1024) * voltageoffset;
@@ -199,7 +214,7 @@ void loop() {
     if (CurrentReading < 0.2) {
       CurrentReading = 0;
     }
-  
+
     UVtotal = UVtotal - UVreadings[UVreadIndex];
     UVreadings[UVreadIndex] = CurrentReading;
     UVtotal = UVtotal + UVreadings[UVreadIndex];
@@ -215,17 +230,18 @@ void loop() {
     //BatteryVoltage = 400;
     BatteryVoltageRing = (map(BatteryVoltage, 330, 400, 0, 12));
     BatteryVoltage = BatteryVoltage / 100;
-    
+
     //----DO NOT REMOVE----
     SensorCaptureTimer = 0;
     //----DO NOT REMOVE----
   }
-  //--------------------------------------------------------------------
+  //---------------------------------------------------------------------------------------------
 
 
 
-  //-------------------------------DISPLAY-------------------------------------
-  if (DisplayTimer >= DisplayTimerTrigger) {
+
+  //-----------------------------------------CALC------------------------------------------------
+  if (CalcTimer >= CalcTimerTrigger) {
     if (SunScreenApplied == true) {
       SunScreenTTBTimer--;
       if (SunScreenTTBTimer == 0) {
@@ -285,6 +301,17 @@ void loop() {
       Serial.println(SunScreenTTBTimer);
     }
     Serial.println("----------------");
+    //----DO NOT REMOVE----
+    CalcTimer = 0;
+    //----DO NOT REMOVE----
+  }
+  //---------------------------------------------------------------------------------------------
+
+
+
+
+  //------------------------------------------DISPLAY----------------------------------------------
+  if (DisplayTimer >= DisplayTimerTrigger) {
     switch (WatchModeSelect) {
       case 1:
         switch (WatchSubModeSelect) {
@@ -306,7 +333,7 @@ void loop() {
                 NeoPixelArray[9][0] = 255;
               }
               //only enter here if the current pixel we care about is active in the loop
-              if (PixelLocation == int(TotalLEDs * (DisplayPercentBurned / 100)) && DisplayPercentBurned > 0) {
+              if (PixelLocation == int(TotalLEDs * (DisplayPercentBurned / 100)) && PercentBurned > 0) {
                 if (PercentBurned < 100) {
                   //If we aren't over burned, show normally.
                   RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
@@ -432,7 +459,10 @@ void loop() {
     DisplayTimer = 0;
     //----DO NOT REMOVE----
   }
-  //--------------------------------------------------------------------
+  //---------------------------------------------------------------------------------------------
+
+
+
 
   delay(LoopDelay);
 }
