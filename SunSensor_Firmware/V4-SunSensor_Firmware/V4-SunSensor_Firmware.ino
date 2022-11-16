@@ -1,7 +1,7 @@
 #include <tinyNeoPixel.h>
 #include "TinyI2CMaster.h"
 
-//------------------SunBurn Variables-------------
+//------------------Watch Variables-------------
 //y = -267.48x + 3913.6
 //Given "x" UV level, "y" returns seconds needed to burn, we measure time spent in "x" and calc a "% burned"
 //(Time Spent at UV level)/(-267.48*(UV level)+3913.6) + ((Time Spent at UV level)/(-267.48*(UV level)+3913.6))*ginger index
@@ -21,6 +21,9 @@ float BurnDecay = 1;
 //Mode control, what we want to start on
 //default is 1
 int WatchModeSelect = 1;
+//Sub-Mode control, what we want to start on
+//default is 1
+int WatchSubModeSelect = 1;
 //LED Brightness
 int LEDBrigthness = 10;
 int adjustableLEDBrigthness = LEDBrigthness;
@@ -49,7 +52,7 @@ float PreviousReading = 0;
 // GUVA-S12SD sensor attached to this pin - voltage is 4.3 x diode photocurrent
 #define UV_PIN PIN_PA2
 float counts;
-float voltage;
+float UVSensorVoltage;
 float voltageoffset = 0.33;
 
 //------------------NeoPixels Setup----------------
@@ -91,7 +94,12 @@ bool LowerButtonPressed = false;
 int UpperButtonPressedTimer = 0;
 int LowerButtonPressedTimer = 0;
 
-//Vibrator setup
+//------------------Voltage Setup-------------
+#define BATT_READ PIN_PA1
+uint32_t BatteryVoltage;
+uint32_t BatteryCounts;
+
+//------------------Vibrator Setup-------------
 #define VIBE_LED PIN_PA5
 
 void setup() {
@@ -137,6 +145,7 @@ void loop() {
 
   //-----------------------------INPUT CAPTURE---------------------------------------
   if (InputTimer >= InputTimerTrigger) {
+    /*
     orientDisplay();
     if (!ZeroAtTwelve) {
       LowerButtonPressedTimer++;
@@ -148,26 +157,29 @@ void loop() {
       }
       LowerButtonPressedTimer = 0;
     }
-    /*
-    orientDisplay();
-    if (ZeroAtTwelve) {
-      WatchModeSelect = 1;
+    */
+    if (digitalRead(UPPER_BUTTON)) {
+      UpperButtonPressedTimer++;
     } else {
-      WatchModeSelect = 2;
-    }
-    
-    if (digitalRead(LOWER_BUTTON)) {
       digitalWrite(VIBE_LED, 0);
-      LowerButtonPressedTimer++;
-    } else {
-      if (LowerButtonPressedTimer > 0 && LowerButtonPressedTimer < 1000) {
+      if (UpperButtonPressedTimer > 0 && UpperButtonPressedTimer < 1000) {
         digitalWrite(VIBE_LED, 1);
         WatchModeSelect++;
-      } else {
-        LowerButtonPressedTimer = 0;
+        WatchSubModeSelect = 1;
       }
+      UpperButtonPressedTimer = 0;
     }
-    */
+
+    if (digitalRead(LOWER_BUTTON)) {
+      LowerButtonPressedTimer++;
+    } else {
+      digitalWrite(VIBE_LED, 0);
+      if (LowerButtonPressedTimer > 0 && LowerButtonPressedTimer < 1000) {
+        digitalWrite(VIBE_LED, 1);
+        WatchSubModeSelect++;
+      }
+      LowerButtonPressedTimer = 0;
+    }
     //----DO NOT REMOVE----
     InputTimer = 0;
     //----DO NOT REMOVE----
@@ -179,8 +191,8 @@ void loop() {
   //-----------------------------SENSOR CAPTURE---------------------------------------
   if (SensorCaptureTimer >= SensorCaptureTrigger) {
     counts = analogRead(UV_PIN);
-    voltage = ((counts * 3300 * 5) / 1024) * voltageoffset;
-    CurrentReading = ((voltage - 108) / 97);
+    UVSensorVoltage = ((counts * 3300 * 5) / 1024) * voltageoffset;
+    CurrentReading = ((UVSensorVoltage - 108) / 97);
     if (CurrentReading > 12) {
       CurrentReading = 12;
     }
@@ -202,6 +214,12 @@ void loop() {
     adjustableLEDBrigthness = (LEDBrigthness * (CurrentReading * 2)) + LEDBrigthness;
     pixels.setBrightness(adjustableLEDBrigthness);
     PreviousReading = CurrentReading;
+
+    BatteryCounts = analogRead(BATT_READ);
+    BatteryVoltage = BatteryCounts * 3300;
+    BatteryVoltage /= 1024;
+    BatteryVoltage *= 2;  // 0 ... 3300
+    BatteryVoltage /= 290;
     //----DO NOT REMOVE----
     SensorCaptureTimer = 0;
     //----DO NOT REMOVE----
@@ -272,100 +290,126 @@ void loop() {
     }
     Serial.println("----------------");
     switch (WatchModeSelect) {
-      //Percent burned display
       case 1:
-        //Loop through pixels
-        for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
-          //Check if we are over 100%
-          if (PercentBurned < 100) {
-            DisplayPercentBurned = PercentBurned;
-          } else {
-            //if we are, then subtract 100 to display correctly
-            DisplayPercentBurned = PercentBurned - 100;
-          }
-          //If we've reached 2x burned, pray for God
-          if (PercentBurned == 200) {
-            NeoPixelArray[0][0] = 255;
-            NeoPixelArray[3][0] = 255;
-            NeoPixelArray[6][0] = 255;
-            NeoPixelArray[9][0] = 255;
-          }
-          //only enter here if the current pixel we care about is active in the loop
-          if (PixelLocation == int(TotalLEDs * (DisplayPercentBurned / 100)) && DisplayPercentBurned > 0) {
-            if (PercentBurned < 100) {
-              //If we aren't over burned, show normally.
-              RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
-              GreenLEDTimer = 255 - RedLEDTimer;
-              BlueLEDTimer = 0;
-            } else {
-              //If we are over burned then show red
-              RedLEDTimer = 255;
-              GreenLEDTimer = 0;
-              BlueLEDTimer = 0;
-              NeoPixelArray[int(PixelLocation - 1)][0] = RedLEDTimer;
-              NeoPixelArray[int(PixelLocation - 1)][1] = GreenLEDTimer + 40;
-              NeoPixelArray[int(PixelLocation - 1)][2] = BlueLEDTimer;
-              NeoPixelArray[int(PixelLocation - 2)][0] = RedLEDTimer;
-              NeoPixelArray[int(PixelLocation - 2)][1] = GreenLEDTimer + 80;
-              NeoPixelArray[int(PixelLocation - 2)][2] = BlueLEDTimer;
-            }
-            NeoPixelArray[int(PixelLocation)][0] = RedLEDTimer;
-            NeoPixelArray[int(PixelLocation)][1] = GreenLEDTimer;
-            NeoPixelArray[int(PixelLocation)][2] = BlueLEDTimer;
-            if (SunScreenApplied) {
-              for (int i = 0; i < (SunScreenTTBTimer / 900) + 1; i++) {
-                PixelLocation++;
-                if (PixelLocation < 12) {
-                  NeoPixelArray[int(PixelLocation)][0] = 0;
-                  NeoPixelArray[int(PixelLocation)][1] = 0;
-                  NeoPixelArray[int(PixelLocation)][2] = 255;
+        switch (WatchSubModeSelect) {
+          case 1:
+            //Percent burned display
+            for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+              //Check if we are over 100% burned
+              if (PercentBurned < 100) {
+                DisplayPercentBurned = PercentBurned;
+              } else {
+                //if we are, then subtract 100 to display correctly
+                DisplayPercentBurned = PercentBurned - 100;
+              }
+              //If we've reached 2x burned, pray for God
+              if (PercentBurned == 200) {
+                NeoPixelArray[0][0] = 255;
+                NeoPixelArray[3][0] = 255;
+                NeoPixelArray[6][0] = 255;
+                NeoPixelArray[9][0] = 255;
+              }
+              //only enter here if the current pixel we care about is active in the loop
+              if (PixelLocation == int(TotalLEDs * (DisplayPercentBurned / 100)) && DisplayPercentBurned > 0) {
+                if (PercentBurned < 100) {
+                  //If we aren't over burned, show normally.
+                  RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
+                  GreenLEDTimer = 255 - RedLEDTimer;
+                  BlueLEDTimer = 0;
                 } else {
-                  NeoPixelArray[int(PixelLocation - 12)][0] = 0;
-                  NeoPixelArray[int(PixelLocation - 12)][1] = 0;
-                  NeoPixelArray[int(PixelLocation - 12)][2] = 255;
+                  //If we are over burned then show red
+                  RedLEDTimer = 255;
+                  GreenLEDTimer = 0;
+                  BlueLEDTimer = 0;
+                  NeoPixelArray[int(PixelLocation - 1)][0] = RedLEDTimer;
+                  NeoPixelArray[int(PixelLocation - 1)][1] = GreenLEDTimer + 40;
+                  NeoPixelArray[int(PixelLocation - 1)][2] = BlueLEDTimer;
+                  NeoPixelArray[int(PixelLocation - 2)][0] = RedLEDTimer;
+                  NeoPixelArray[int(PixelLocation - 2)][1] = GreenLEDTimer + 80;
+                  NeoPixelArray[int(PixelLocation - 2)][2] = BlueLEDTimer;
+                }
+                NeoPixelArray[int(PixelLocation)][0] = RedLEDTimer;
+                NeoPixelArray[int(PixelLocation)][1] = GreenLEDTimer;
+                NeoPixelArray[int(PixelLocation)][2] = BlueLEDTimer;
+                if (SunScreenApplied) {
+                  for (int i = 0; i < (SunScreenTTBTimer / 900) + 1; i++) {
+                    PixelLocation++;
+                    if (PixelLocation < 12) {
+                      NeoPixelArray[int(PixelLocation)][0] = 0;
+                      NeoPixelArray[int(PixelLocation)][1] = 0;
+                      NeoPixelArray[int(PixelLocation)][2] = 255;
+                    } else {
+                      NeoPixelArray[int(PixelLocation - 12)][0] = 0;
+                      NeoPixelArray[int(PixelLocation - 12)][1] = 0;
+                      NeoPixelArray[int(PixelLocation - 12)][2] = 255;
+                    }
+                  }
                 }
               }
             }
-          }
+            break;  //----DO NOT REMOVE----
+          case 2:
+            //UV level display
+            for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+              if (PixelLocation <= UVaverage && UVaverage != 0) {
+                RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
+                GreenLEDTimer = 0;
+                BlueLEDTimer = 255 - RedLEDTimer;
+                NeoPixelArray[int(PixelLocation)][0] = RedLEDTimer;
+                NeoPixelArray[int(PixelLocation)][1] = GreenLEDTimer;
+                NeoPixelArray[int(PixelLocation)][2] = BlueLEDTimer;
+              }
+            }
+            break;  //----DO NOT REMOVE----
+          default:
+            WatchSubModeSelect = 1;
+            break;  //----DO NOT REMOVE----
         }
         break;  //----DO NOT REMOVE----
-      //UV display
       case 2:
-        for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
-          if (PixelLocation <= UVaverage && UVaverage != 0) {
-            RedLEDTimer = 255 * (PixelLocation / TotalLEDs);
-            GreenLEDTimer = 0;
-            BlueLEDTimer = 255 - RedLEDTimer;
-            NeoPixelArray[int(PixelLocation)][0] = RedLEDTimer;
-            NeoPixelArray[int(PixelLocation)][1] = GreenLEDTimer;
-            NeoPixelArray[int(PixelLocation)][2] = BlueLEDTimer;
-          }
-        }
-        break;  //----DO NOT REMOVE----
-      case 3:
-        for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
-          NeoPixelArray[int(PixelLocation)][0] = 255;
-          NeoPixelArray[int(PixelLocation)][1] = 0;
-          NeoPixelArray[int(PixelLocation)][2] = 0;
-          pixels.setBrightness(255);
-        }
-        break;  //----DO NOT REMOVE----
-      case 4:
-        for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
-          NeoPixelArray[int(PixelLocation)][0] = 150;
-          NeoPixelArray[int(PixelLocation)][1] = 255;
-          NeoPixelArray[int(PixelLocation)][2] = 255;
-          pixels.setBrightness(255);
-        }
-        break;  //----DO NOT REMOVE----
-      case 5:
-        RedLEDTimer = random(0, 200);
-        GreenLEDTimer = random(0, 200);
-        BlueLEDTimer = random(0, 200);
-        for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
-          NeoPixelArray[int(PixelLocation)][0] = RedLEDTimer;
-          NeoPixelArray[int(PixelLocation)][1] = GreenLEDTimer;
-          NeoPixelArray[int(PixelLocation)][2] = BlueLEDTimer;
+        switch (WatchSubModeSelect) {
+          case 1:
+            //Battery voltage
+            for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+              if (int(PixelLocation) <= int(BatteryVoltage)) {
+                NeoPixelArray[int(PixelLocation)][0] = 255;
+                NeoPixelArray[int(PixelLocation)][1] = 255;
+                NeoPixelArray[int(PixelLocation)][2] = 255;
+              }
+            }
+            break;  //----DO NOT REMOVE----
+          case 2:
+            //Red flashlight
+            for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+              NeoPixelArray[int(PixelLocation)][0] = 255;
+              NeoPixelArray[int(PixelLocation)][1] = 0;
+              NeoPixelArray[int(PixelLocation)][2] = 0;
+              pixels.setBrightness(255);
+            }
+            break;  //----DO NOT REMOVE----
+          case 3:
+            //White-ish flashlight
+            for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+              NeoPixelArray[int(PixelLocation)][0] = 175;
+              NeoPixelArray[int(PixelLocation)][1] = 255;
+              NeoPixelArray[int(PixelLocation)][2] = 255;
+              pixels.setBrightness(255);
+            }
+            break;  //----DO NOT REMOVE----
+          case 4:
+            //Party time, excellent
+            RedLEDTimer = random(0, 200);
+            GreenLEDTimer = random(0, 200);
+            BlueLEDTimer = random(0, 200);
+            for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+              NeoPixelArray[int(PixelLocation)][0] = RedLEDTimer;
+              NeoPixelArray[int(PixelLocation)][1] = GreenLEDTimer;
+              NeoPixelArray[int(PixelLocation)][2] = BlueLEDTimer;
+            }
+            break;  //----DO NOT REMOVE----
+          default:
+            WatchSubModeSelect = 1;
+            break;  //----DO NOT REMOVE----
         }
         break;  //----DO NOT REMOVE----
       default:
