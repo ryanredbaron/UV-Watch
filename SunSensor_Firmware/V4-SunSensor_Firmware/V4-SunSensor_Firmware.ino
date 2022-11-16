@@ -216,6 +216,12 @@ void loop() {
       CurrentReading = 0;
     }
 
+    //Giving momentum to decreasing readings. Prevents shade bias. Slows down decay.
+    if (PreviousReading > CurrentReading) {
+      CurrentReading = PreviousReading - ((PreviousReading - CurrentReading) / 10);
+    }
+    PreviousReading = CurrentReading;
+
     UVtotal = UVtotal - UVreadings[UVreadIndex];
     UVreadings[UVreadIndex] = CurrentReading;
     UVtotal = UVtotal + UVreadings[UVreadIndex];
