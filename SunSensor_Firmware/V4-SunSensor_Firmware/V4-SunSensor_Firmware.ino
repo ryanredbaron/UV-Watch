@@ -215,7 +215,7 @@ void loop() {
     PreviousReading = CurrentReading;
 
     //BatteryVoltage = analogRead(BATT_READ) * (5.0 / 1023.0);
-    BatteryVoltage = map(analogRead(BATT_READ), 0, 511, 0, 11);
+    BatteryVoltage = map(analogRead(BATT_READ), 0, 1023, 0, 11);
     //----DO NOT REMOVE----
     SensorCaptureTimer = 0;
     //----DO NOT REMOVE----
