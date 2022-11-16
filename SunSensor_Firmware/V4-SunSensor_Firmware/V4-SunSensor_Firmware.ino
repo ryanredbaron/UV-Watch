@@ -320,11 +320,11 @@ void loop() {
   if (DisplayTimer >= DisplayTimerTrigger) {
     switch (WatchModeSelect) {
       case 1:
-        if (!ZeroAtTwelve) {
-          break;
-        }
         switch (WatchSubModeSelect) {
           case 1:
+            if (!ZeroAtTwelve) {
+              break;
+            }
             //Percent burned display
             for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
               //Check if we are over 100% burned
