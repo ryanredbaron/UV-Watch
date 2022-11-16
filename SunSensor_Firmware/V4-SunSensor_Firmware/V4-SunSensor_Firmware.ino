@@ -7,7 +7,7 @@
 //(Time Spent at UV level)/(-267.48*(UV level)+3913.6) + ((Time Spent at UV level)/(-267.48*(UV level)+3913.6))*ginger index
 //1 = ginger. Increase to burn faster, decrease to be a beautiful tan person
 //default is 1
-float GingerIndex = 100;
+float GingerIndex = 1;
 //Input SPF used
 //default is 30
 float SPFIndex = 30;
@@ -17,7 +17,7 @@ int SunScreenDurationSeconds = 3600;
 //How fast you want to recover from sunburn
 //Percent decay per second, as a decimal
 //Default = 0.005
-float BurnDecay = 1;
+float BurnDecay = 0.005;
 //Mode control, what we want to start on
 //default is 1
 int WatchModeSelect = 1;
@@ -25,7 +25,7 @@ int WatchModeSelect = 1;
 //default is 1
 int WatchSubModeSelect = 1;
 //LED Brightness
-int LEDBrigthness = 10;
+int LEDBrigthness = 5;
 int adjustableLEDBrigthness = LEDBrigthness;
 
 //------------------SunBurn Algo Setup-------------
@@ -384,8 +384,8 @@ void loop() {
               NeoPixelArray[int(PixelLocation)][0] = 255;
               NeoPixelArray[int(PixelLocation)][1] = 0;
               NeoPixelArray[int(PixelLocation)][2] = 0;
-              pixels.setBrightness(255);
             }
+            pixels.setBrightness(255);
             break;  //----DO NOT REMOVE----
           case 3:
             //White-ish flashlight
@@ -393,8 +393,8 @@ void loop() {
               NeoPixelArray[int(PixelLocation)][0] = 175;
               NeoPixelArray[int(PixelLocation)][1] = 255;
               NeoPixelArray[int(PixelLocation)][2] = 255;
-              pixels.setBrightness(255);
             }
+            pixels.setBrightness(255);
             break;  //----DO NOT REMOVE----
           case 4:
             //Party time, excellent
@@ -406,6 +406,7 @@ void loop() {
               NeoPixelArray[int(PixelLocation)][1] = GreenLEDTimer;
               NeoPixelArray[int(PixelLocation)][2] = BlueLEDTimer;
             }
+            pixels.setBrightness(random(0, 255));
             break;  //----DO NOT REMOVE----
           default:
             WatchSubModeSelect = 1;
