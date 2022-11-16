@@ -97,6 +97,7 @@ int LowerButtonPressedTimer = 0;
 //------------------Voltage Setup-------------
 #define BATT_READ PIN_PA1
 float BatteryVoltage;
+float BatteryVoltageRing;
 
 //------------------Vibrator Setup-------------
 #define VIBE_LED PIN_PA5
@@ -214,8 +215,10 @@ void loop() {
     pixels.setBrightness(adjustableLEDBrigthness);
     PreviousReading = CurrentReading;
 
-    //BatteryVoltage = analogRead(BATT_READ) * (5.0 / 1023.0);
-    BatteryVoltage = map(analogRead(BATT_READ), 0, 1023, 0, 11);
+    BatteryVoltage = (map(analogRead(BATT_READ), 0, 1024, 0, 660));
+    //BatteryVoltage = 420;
+    BatteryVoltageRing = (map(BatteryVoltage, 330, 420, 0, 11));
+    BatteryVoltage = BatteryVoltage / 100;
     //----DO NOT REMOVE----
     SensorCaptureTimer = 0;
     //----DO NOT REMOVE----
@@ -367,10 +370,16 @@ void loop() {
           case 1:
             //Battery voltage
             for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
-              if (int(PixelLocation) <= int(BatteryVoltage)) {
-                NeoPixelArray[int(PixelLocation)][0] = 255;
-                NeoPixelArray[int(PixelLocation)][1] = 255;
-                NeoPixelArray[int(PixelLocation)][2] = 255;
+              if (PixelLocation < BatteryVoltageRing) {
+                if (BatteryVoltage < 4) {
+                  NeoPixelArray[int(PixelLocation)][0] = 255;
+                  NeoPixelArray[int(PixelLocation)][1] = 0;
+                  NeoPixelArray[int(PixelLocation)][2] = 0;
+                } else {
+                  NeoPixelArray[int(PixelLocation)][0] = 255;
+                  NeoPixelArray[int(PixelLocation)][1] = 255;
+                  NeoPixelArray[int(PixelLocation)][2] = 255;
+                }
               }
             }
             break;  //----DO NOT REMOVE----
