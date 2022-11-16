@@ -230,7 +230,7 @@ void loop() {
       UVreadIndex = 0;
     }
     //adjustableLEDBrigthness = (LEDBrigthness * (CurrentReading * 2)) + LEDBrigthness;
-    adjustableLEDBrigthness = map(CurrentReading, 0, 12, 1, 255);
+    adjustableLEDBrigthness = map(CurrentReading, 0, 12, 2, 255);
     pixels.setBrightness(adjustableLEDBrigthness);
 
     BatteryVoltage = (map(analogRead(BATT_READ), 0, 1024, 0, 660));
