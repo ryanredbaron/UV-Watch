@@ -102,6 +102,14 @@ float BatteryVoltageRing;
 //------------------Vibrator Setup-------------
 #define VIBE_LED PIN_PA5
 
+//---------------Alex's Clock-------------
+unsigned long startMillis;
+unsigned long currentMillis;
+const unsigned long period = 1000;
+int ClockSeconds = 1;
+int ClockMinute = 0;
+int ClockHour = 0;
+
 void setup() {
   Serial.begin(9600);
   Serial.println();
@@ -123,6 +131,8 @@ void setup() {
   digitalWrite(VIBE_LED, 1);
   delay(500);
   digitalWrite(VIBE_LED, 0);
+
+  startMillis = millis();
 }
 
 //------Just don't edit any of this OK?-----
@@ -148,14 +158,29 @@ int CalcTimerTrigger = 100;
 
 
 void loop() {
+
   SensorCaptureTimer++;
   DisplayTimer++;
   InputTimer++;
   CalcTimer++;
 
-
-
-
+  currentMillis = millis();
+  if (currentMillis - startMillis >= period) {
+    digitalWrite(ledPin, !digitalRead(ledPin));
+    startMillis = currentMillis;
+    ClockSeconds++;
+    if(ClockSeconds >= 61){
+      ClockSeconds = 1;
+      ClockMinute++;
+      if(ClockMinute >= 61){
+        ClockMinute = 0;
+        ClockHour++
+        if(ClockHour >= 24){
+          ClockHour = 0;
+        }
+      }
+    }
+  }
 
   //---------------------------------------INPUT CAPTURE-----------------------------------------
   if (InputTimer >= InputTimerTrigger) {
