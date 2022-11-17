@@ -106,7 +106,7 @@ float BatteryVoltageRing;
 unsigned long startMillis;
 unsigned long currentMillis;
 const unsigned long period = 1000;
-int ClockSeconds = 1;
+int ClockSecond = 0;
 int ClockMinute = 0;
 int ClockHour = 0;
 
@@ -166,16 +166,15 @@ void loop() {
 
   currentMillis = millis();
   if (currentMillis - startMillis >= period) {
-    digitalWrite(ledPin, !digitalRead(ledPin));
     startMillis = currentMillis;
-    ClockSeconds++;
-    if(ClockSeconds >= 61){
-      ClockSeconds = 1;
+    ClockSecond++;
+    if (ClockSecond >= 60) {
+      ClockSecond = 0;
       ClockMinute++;
-      if(ClockMinute >= 61){
+      if (ClockMinute >= 60) {
         ClockMinute = 0;
-        ClockHour++
-        if(ClockHour >= 24){
+        ClockHour++;
+        if (ClockHour >= 24) {
           ClockHour = 0;
         }
       }
@@ -424,6 +423,20 @@ void loop() {
         }
         break;  //----DO NOT REMOVE----
       case 2:
+        //Watch mode
+        for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+          if (PixelLocation < map(ClockSecond, 0, 60, 0, 12)) {
+            NeoPixelArray[int(PixelLocation)][0] = 255;
+          }
+          if (PixelLocation < map(ClockMinute, 0, 60, 0, 12)) {
+            NeoPixelArray[int(PixelLocation)][1] = 255;
+          }
+          if (PixelLocation < map(ClockHour, 0, 24, 0, 12)) {
+            NeoPixelArray[int(PixelLocation)][2] = 255;
+          }
+        }
+        break;
+      case 3:
         switch (WatchSubModeSelect) {
           case 1:
             //Battery voltage
