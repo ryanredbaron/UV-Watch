@@ -105,10 +105,11 @@ float BatteryVoltageRing;
 //---------------Alex's Clock-------------
 unsigned long startMillis;
 unsigned long currentMillis;
-const unsigned long period = 1000;
+const unsigned long period = 995;
 int ClockSecond = 0;
-int ClockMinute = 0;
+int ClockMinute = 14;
 int ClockHour = 0;
+int ErrorTime = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -137,28 +138,27 @@ void setup() {
 
 //------Just don't edit any of this OK?-----
 //**Do not edit (dire consequences)**
-int LoopDelay = 10;
+int LoopDelay = 5;
 
 int InputTimer = 0;
 //**Do not edit (dire consequences)**
-int InputTimerTrigger = 1;
+int InputTimerTrigger = 2;
 
 int SensorCaptureTimer = 0;
 //**Do not edit (dire consequences)**
-int SensorCaptureTrigger = 10;
+int SensorCaptureTrigger = 20;
 
 int DisplayTimer = 0;
 //**Do not edit (dire consequences)**
-int DisplayTimerTrigger = 10;
+int DisplayTimerTrigger = 20;
 
 int CalcTimer = 0;
 //**Do not edit (dire consequences)**
-int CalcTimerTrigger = 100;
+int CalcTimerTrigger = 200;
 //------------------------------------------
 
 
 void loop() {
-
   SensorCaptureTimer++;
   DisplayTimer++;
   InputTimer++;
@@ -166,6 +166,7 @@ void loop() {
 
   currentMillis = millis();
   if (currentMillis - startMillis >= period) {
+    ErrorTime = (period) - (currentMillis - startMillis);
     startMillis = currentMillis;
     ClockSecond++;
     if (ClockSecond >= 60) {
@@ -174,7 +175,7 @@ void loop() {
       if (ClockMinute >= 60) {
         ClockMinute = 0;
         ClockHour++;
-        if (ClockHour >= 24) {
+        if (ClockHour >= 12) {
           ClockHour = 0;
         }
       }
@@ -423,17 +424,38 @@ void loop() {
         }
         break;  //----DO NOT REMOVE----
       case 2:
-        //Watch mode
-        for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
-          if (PixelLocation < map(ClockSecond, 0, 60, 0, 12)) {
-            NeoPixelArray[int(PixelLocation)][0] = 255;
-          }
-          if (PixelLocation < map(ClockMinute, 0, 60, 0, 12)) {
-            NeoPixelArray[int(PixelLocation)][1] = 255;
-          }
-          if (PixelLocation < map(ClockHour, 0, 24, 0, 12)) {
-            NeoPixelArray[int(PixelLocation)][2] = 255;
-          }
+        switch (WatchSubModeSelect) {
+          case 1:
+            if (!ZeroAtTwelve) {
+              break;
+            }
+            //Watch mode
+            for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+              if (PixelLocation == map(ClockSecond, 0, 60, 0, 12)) {
+                NeoPixelArray[int(PixelLocation)][0] = 255;
+              }
+              if (PixelLocation == map(ClockMinute, 0, 60, 0, 12)) {
+                NeoPixelArray[int(PixelLocation)][1] = 255;
+              }
+              if (PixelLocation == ClockHour) {
+                NeoPixelArray[int(PixelLocation)][2] = 255;
+              }
+            }
+            break;  //----DO NOT REMOVE----
+          case 2:
+            for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+              if (PixelLocation == map(abs(ErrorTime), 0, 50, 0, 12)) {
+                if (ErrorTime < 0) {
+                  NeoPixelArray[int(PixelLocation)][0] = 255;
+                } else {
+                  NeoPixelArray[int(PixelLocation)][1] = 255;
+                }
+              }
+            }
+            break;
+          default:
+            WatchSubModeSelect = 1;
+            break;  //----DO NOT REMOVE----
         }
         break;
       case 3:
