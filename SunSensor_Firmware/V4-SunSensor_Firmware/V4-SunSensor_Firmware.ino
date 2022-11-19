@@ -106,9 +106,9 @@ float BatteryVoltageRing;
 unsigned long startMillis;
 unsigned long currentMillis;
 const unsigned long period = 1000;
-int ClockSecond = 30;
-int ClockMinute = 14;
-int ClockHour = 10;
+int ClockSecond = 0;
+int ClockMinute = 30;
+int ClockHour = 7;
 int ErrorTime = 0;
 unsigned long cumuErrorTime = 0;
 
