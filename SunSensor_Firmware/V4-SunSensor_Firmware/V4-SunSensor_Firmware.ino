@@ -105,11 +105,12 @@ float BatteryVoltageRing;
 //---------------Alex's Clock-------------
 unsigned long startMillis;
 unsigned long currentMillis;
-const unsigned long period = 995;
-int ClockSecond = 0;
-int ClockMinute = 14;
-int ClockHour = 0;
+const unsigned long period = 1000;
+int ClockSecond = 30;
+int ClockMinute = 34;
+int ClockHour = 2;
 int ErrorTime = 0;
+unsigned long cumuErrorTime = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -166,9 +167,17 @@ void loop() {
 
   currentMillis = millis();
   if (currentMillis - startMillis >= period) {
+
     ErrorTime = (period) - (currentMillis - startMillis);
-    startMillis = currentMillis;
+    cumuErrorTime = cumuErrorTime + abs(ErrorTime);
+    if (cumuErrorTime >= period && ClockSecond < 58) {
+      ClockSecond++;
+      cumuErrorTime = 0;
+    }
     ClockSecond++;
+
+    startMillis = currentMillis;
+
     if (ClockSecond >= 60) {
       ClockSecond = 0;
       ClockMinute++;
@@ -242,7 +251,7 @@ void loop() {
     }
 
     //Giving momentum to decreasing readings. Prevents shade bias. Slows down decay.
-    if (PreviousReading > CurrentReading) {
+    if (CurrentReading < PreviousReading) {
       CurrentReading = PreviousReading - ((PreviousReading - CurrentReading) / 10);
     }
     PreviousReading = CurrentReading;
@@ -255,7 +264,7 @@ void loop() {
       UVreadIndex = 0;
     }
     //adjustableLEDBrigthness = (LEDBrigthness * (CurrentReading * 2)) + LEDBrigthness;
-    adjustableLEDBrigthness = map(CurrentReading, 0, 12, 2, 255);
+    adjustableLEDBrigthness = map(UVaverage, 0, 12, 2, 255);
     pixels.setBrightness(adjustableLEDBrigthness);
 
     BatteryVoltage = (map(analogRead(BATT_READ), 0, 1024, 0, 660));
@@ -314,6 +323,8 @@ void loop() {
     if (PercentBurned > 200) {
       PercentBurned = 200;
     }
+
+    /*
     //Testing/monitoring
     Serial.print("Average UV - ");
     Serial.println(UVaverage);
@@ -332,6 +343,8 @@ void loop() {
       Serial.println(SunScreenTTBTimer);
     }
     Serial.println("----------------");
+    */
+
     //----DO NOT REMOVE----
     CalcTimer = 0;
     //----DO NOT REMOVE----
@@ -450,6 +463,13 @@ void loop() {
                 } else {
                   NeoPixelArray[int(PixelLocation)][1] = 255;
                 }
+              }
+            }
+            break;
+          case 3:
+            for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
+              if (PixelLocation < map(abs(cumuErrorTime), 0, 1000, 0, 12)) {
+                NeoPixelArray[int(PixelLocation)][0] = 255;
               }
             }
             break;
