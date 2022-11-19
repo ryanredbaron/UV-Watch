@@ -106,8 +106,8 @@ float BatteryVoltageRing;
 unsigned long startMillis;
 unsigned long currentMillis;
 const unsigned long period = 1000;
-int ClockSecond = 0;
-int ClockMinute = 4;
+int ClockSecond = 30;
+int ClockMinute = 14;
 int ClockHour = 10;
 int ErrorTime = 0;
 unsigned long cumuErrorTime = 0;
@@ -169,7 +169,7 @@ void loop() {
   if (currentMillis - startMillis >= period) {
 
     ErrorTime = (period) - (currentMillis - startMillis);
-    cumuErrorTime = cumuErrorTime - ErrorTime + 2;
+    cumuErrorTime = cumuErrorTime - ErrorTime + 4;
     if (cumuErrorTime >= period && ClockSecond < 58) {
       ClockSecond++;
       cumuErrorTime = cumuErrorTime - period;
