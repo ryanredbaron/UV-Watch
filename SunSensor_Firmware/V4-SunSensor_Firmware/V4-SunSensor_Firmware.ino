@@ -107,8 +107,8 @@ unsigned long startMillis;
 unsigned long currentMillis;
 const unsigned long period = 1000;
 int ClockSecond = 0;
-int ClockMinute = 56;
-int ClockHour = 9;
+int ClockMinute = 4;
+int ClockHour = 10;
 int ErrorTime = 0;
 unsigned long cumuErrorTime = 0;
 
@@ -169,7 +169,7 @@ void loop() {
   if (currentMillis - startMillis >= period) {
 
     ErrorTime = (period) - (currentMillis - startMillis);
-    cumuErrorTime = cumuErrorTime - ErrorTime;
+    cumuErrorTime = cumuErrorTime - ErrorTime + 2;
     if (cumuErrorTime >= period && ClockSecond < 58) {
       ClockSecond++;
       cumuErrorTime = cumuErrorTime - period;
