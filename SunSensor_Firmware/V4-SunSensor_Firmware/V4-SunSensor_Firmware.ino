@@ -169,7 +169,7 @@ void loop() {
   if (currentMillis - startMillis >= period) {
 
     ErrorTime = (period) - (currentMillis - startMillis);
-    cumuErrorTime = cumuErrorTime - ErrorTime + 4;
+    cumuErrorTime = cumuErrorTime - ErrorTime + 2;
     if (cumuErrorTime >= period && ClockSecond < 58) {
       ClockSecond++;
       cumuErrorTime = cumuErrorTime - period;
