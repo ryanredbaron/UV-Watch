@@ -11,7 +11,7 @@
 4. [ ] Sun reset
 5. [x] Less sensitive to sun 
 6. [?] Uv sensor voltage revamp
-7. [ ] Low power mode
+7. [x] Low power mode
 8. [x] Input time from PC
 
 ![alt text](https://github.com/ryanredbaron/UV-Watch/blob/master/Specifications/adafruit_products_image.png?raw=true)
