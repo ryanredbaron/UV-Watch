@@ -9,8 +9,8 @@
 2. [x] Battery shut off
 3. [x] Sunscreen apply
 4. [ ] Sun reset
-5. [ ] Less sensitive to sun 
-6. [ ] Uv sensor voltage revamp
+5. [x] Less sensitive to sun 
+6. [?] Uv sensor voltage revamp
 7. [ ] Low power mode
 8. [x] Input time from PC
 
