@@ -7,7 +7,7 @@
 ## Project List
 1. [ ] Clock refinement 
 2. [x] Battery shut off
-3. [ ] Sunscreen apply
+3. [x] Sunscreen apply
 4. [ ] Sun reset
 5. [ ] Less sensitive to sun 
 6. [ ] Uv sensor voltage revamp
