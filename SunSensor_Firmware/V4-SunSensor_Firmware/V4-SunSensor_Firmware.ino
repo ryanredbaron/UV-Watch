@@ -97,8 +97,6 @@ bool UpperButtonPressed = false;
 bool LowerButtonPressed = false;
 int UpperButtonPressedTimer = 0;
 int LowerButtonPressedTimer = 0;
-int UpperButtonLongPress = 0;
-int LowerButtonLongPress = 0;
 
 //------------------Voltage Setup-------------
 #define BATT_READ PIN_PA1
@@ -209,17 +207,11 @@ void loop() {
       UpperButtonPressedTimer++;
     } else {
       digitalWrite(VIBE_LED, 0);
-
-      if (UpperButtonPressedTimer > 100 && UpperButtonPressedTimer < 1000) {
+      if (UpperButtonPressedTimer > 0 && UpperButtonPressedTimer < 1000) {
         digitalWrite(VIBE_LED, 1);
         WatchModeSelect++;
         WatchSubModeSelect = 1;
       }
-
-      if (UpperButtonPressedTimer > 1000 && UpperButtonPressedTimer < 5000) {
-        UpperButtonLongPress++;
-      }
-
       UpperButtonPressedTimer = 0;
     }
 
@@ -227,19 +219,11 @@ void loop() {
       LowerButtonPressedTimer++;
     } else {
       digitalWrite(VIBE_LED, 0);
-
-      if (LowerButtonPressedTimer > 100 && LowerButtonPressedTimer < 1000) {
+      if (LowerButtonPressedTimer > 0 && LowerButtonPressedTimer < 1000) {
         digitalWrite(VIBE_LED, 1);
-        WatchModeSelect++;
-        WatchSubModeSelect = 1;
+        WatchSubModeSelect++;
       }
-
-      if (LowerButtonPressedTimer > 1000 && LowerButtonPressedTimer < 5000) {
-        LowerButtonLongPress++;
-      }
-
       LowerButtonPressedTimer = 0;
-    }
     }
     //----DO NOT REMOVE----
     InputTimer = 0;
@@ -478,7 +462,6 @@ void loop() {
             }
             break;  //----DO NOT REMOVE----
           case 2:
-            //Instant error display
             for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
               if (PixelLocation == map(abs(ErrorTime), 0, 50, 0, 12)) {
                 if (ErrorTime < 0) {
@@ -490,7 +473,6 @@ void loop() {
             }
             break;
           case 3:
-            //cumu error display
             for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
               if (PixelLocation < map(abs(cumuErrorTime), 0, 1000, 0, 12)) {
                 NeoPixelArray[int(PixelLocation)][0] = 255;
@@ -556,20 +538,30 @@ void loop() {
         }
         break;  //----DO NOT REMOVE----
       case 4:
-        //Button testing
-        for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
-          if (PixelLocation < UpperButtonLongPress) {
-            NeoPixelArray[int(PixelLocation)][0] = 255;
-          }
+        switch (WatchSubModeSelect) {
+          //Settings Mode
+          case 1:
+            NeoPixelArray[0][2] = 255;
+            NeoPixelArray[3][2] = 255;
+            NeoPixelArray[6][2] = 255;
+            NeoPixelArray[9][2] = 255;
+            break;
+          case 2:
+            //Apply sunscreen
+            SunScreenApplied = true;
+            WatchSubModeSelect = 1;
+            break;
+          default:
+            WatchSubModeSelect = 1;
+            break;  //----DO NOT REMOVE----
         }
         break;
       default:
         WatchModeSelect = 1;
         break;  //----DO NOT REMOVE----
     }
-
+    //Loop through all color selections and display
     for (int PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
-      //Loop through all color selections and display
       pixels.setPixelColor(PixelLocation, pixels.Color(NeoPixelArray[PixelLocation][0], NeoPixelArray[PixelLocation][1], NeoPixelArray[PixelLocation][2]));
       NeoPixelArray[PixelLocation][0] = 0;
       NeoPixelArray[PixelLocation][1] = 0;
@@ -577,7 +569,6 @@ void loop() {
       delay(1);
     }
     pixels.show();
-
     //----DO NOT REMOVE----
     DisplayTimer = 0;
     //----DO NOT REMOVE----

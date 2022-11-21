@@ -3,9 +3,9 @@ $TimeOffSet = New-TimeSpan -Days 0 -Hours 0 -Minutes 0 -Seconds 15
 
 while($TRUE){
     $CurrentTime = (Get-Date) + $TimeOffSet
-    $PSHour = "int ExtClockHour = $($CurrentTime.ToString("hh")  -replace '^0+', '0');"
-    $PSMinute = "int ExtClockMinute = $($CurrentTime.ToString("mm") -replace '^0+', '0' );"
-    $PSSecond = "int ExtClockSecond = $($CurrentTime.ToString("ss") -replace '^0+', '0' );"
+    $PSHour = "int ExtClockHour = $($($CurrentTime.ToString("hh"))-replace '^0+', '');"
+    $PSMinute = "int ExtClockMinute = $($($CurrentTime.ToString("mm"))-replace '^0+', '');"
+    $PSSecond = "int ExtClockSecond = $($($CurrentTime.ToString("ss"))-replace '^0+', '');"
 
     $PSHour | out-file $MyValsLocation -Encoding ASCII
     $PSMinute | Add-Content $MyValsLocation -Encoding ASCII
