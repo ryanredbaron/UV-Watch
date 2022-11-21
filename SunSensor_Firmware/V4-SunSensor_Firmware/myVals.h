@@ -1,3 +1,3 @@
 int ExtClockHour = 10;
-int ExtClockMinute = 30;
-int ExtClockSecond = 57;
+int ExtClockMinute = 47;
+int ExtClockSecond = 40;
