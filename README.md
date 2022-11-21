@@ -7,10 +7,10 @@
 ## Project List
 1. [ ] Clock refinement 
 2. [ ] Battery shut off
-[ ] Sunscreen apply
-[ ] Sun reset
-[ ] Less sensitive to sun 
-[ ] Uv sensor voltage revamp
-[ ] Low power mode
+3. [ ] Sunscreen apply
+4. [ ] Sun reset
+5. [ ] Less sensitive to sun 
+6. [ ] Uv sensor voltage revamp
+7. [ ] Low power mode
 
 ![alt text](https://github.com/ryanredbaron/UV-Watch/blob/master/Specifications/adafruit_products_image.png?raw=true)
