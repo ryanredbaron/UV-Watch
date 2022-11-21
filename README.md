@@ -5,8 +5,8 @@
 - Close enough battery tracking
  
 ## Project List
-[ ] Clock refinement 
-[ ] Battery shut off
+1. [ ] Clock refinement 
+2. [ ] Battery shut off
 [ ] Sunscreen apply
 [ ] Sun reset
 [ ] Less sensitive to sun 
