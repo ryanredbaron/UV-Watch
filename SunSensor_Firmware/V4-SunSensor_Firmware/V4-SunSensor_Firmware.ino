@@ -1,6 +1,10 @@
 #include <tinyNeoPixel.h>
 #include "TinyI2CMaster.h"
 
+#include <avr/sleep.h>
+
+#include "myVals.h"
+
 //------------------Watch Variables-------------
 //y = -267.48x + 3913.6
 //Given "x" UV level, "y" returns seconds needed to burn, we measure time spent in "x" and calc a "% burned"
@@ -98,6 +102,10 @@ int LowerButtonPressedTimer = 0;
 #define BATT_READ PIN_PA1
 float BatteryVoltage;
 float BatteryVoltageRing;
+int LowVoltageCount = 0;
+float BatteryChargeVoltage = 3.5;
+float MaxCutoffVoltage = 4;
+float MinCutoffVoltage = 3.7;
 
 //------------------Vibrator Setup-------------
 #define VIBE_LED PIN_PA5
@@ -106,9 +114,9 @@ float BatteryVoltageRing;
 unsigned long startMillis;
 unsigned long currentMillis;
 const unsigned long period = 1000;
-int ClockSecond = 0;
-int ClockMinute = 30;
-int ClockHour = 7;
+int ClockSecond = ExtClockSecond;
+int ClockMinute = ExtClockMinute;
+int ClockHour = ExtClockHour;
 int ErrorTime = 0;
 unsigned long cumuErrorTime = 0;
 
@@ -264,13 +272,23 @@ void loop() {
       UVreadIndex = 0;
     }
     //adjustableLEDBrigthness = (LEDBrigthness * (CurrentReading * 2)) + LEDBrigthness;
-    adjustableLEDBrigthness = map(UVaverage, 0, 12, 2, 255);
+    adjustableLEDBrigthness = map(CurrentReading, 0, 12, 2, 255);
     pixels.setBrightness(adjustableLEDBrigthness);
 
     BatteryVoltage = (map(analogRead(BATT_READ), 0, 1024, 0, 660));
     //BatteryVoltage = 400;
     BatteryVoltageRing = (map(BatteryVoltage, 330, 400, 0, 12));
     BatteryVoltage = BatteryVoltage / 100;
+    if (BatteryVoltage >= BatteryChargeVoltage && BatteryVoltage <= MinCutoffVoltage) {
+      LowVoltageCount++;
+      if (LowVoltageCount >= 100) {
+        pixels.clear();
+        pixels.show();
+        sleep_enable();
+        set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+        sleep_cpu();
+      }
+    }
 
     //----DO NOT REMOVE----
     SensorCaptureTimer = 0;
@@ -484,7 +502,7 @@ void loop() {
             //Battery voltage
             for (float PixelLocation = 0; PixelLocation < TotalLEDs; PixelLocation++) {
               if (PixelLocation < BatteryVoltageRing) {
-                if (PixelLocation <= 3.7) {
+                if (PixelLocation <= MinCutoffVoltage) {
                   NeoPixelArray[int(PixelLocation)][0] = 255;
                   NeoPixelArray[int(PixelLocation)][1] = 0;
                   NeoPixelArray[int(PixelLocation)][2] = 0;
