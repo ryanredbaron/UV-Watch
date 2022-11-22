@@ -57,7 +57,7 @@ float PreviousReading = 0;
 #define UV_PIN PIN_PA2
 float counts;
 float UVSensorVoltage;
-float voltageoffset = 0.33;
+float voltageoffset = 0.30;
 
 //------------------NeoPixels Setup----------------
 // NeoPixel Pin
@@ -146,23 +146,18 @@ void setup() {
 }
 
 //------Just don't edit any of this OK?-----
-//**Do not edit (dire consequences)**
 int LoopDelay = 5;
 
 int InputTimer = 0;
-//**Do not edit (dire consequences)**
 int InputTimerTrigger = 2;
 
 int SensorCaptureTimer = 0;
-//**Do not edit (dire consequences)**
 int SensorCaptureTrigger = 20;
 
 int DisplayTimer = 0;
-//**Do not edit (dire consequences)**
 int DisplayTimerTrigger = 20;
 
 int CalcTimer = 0;
-//**Do not edit (dire consequences)**
 int CalcTimerTrigger = 200;
 //------------------------------------------
 
@@ -237,7 +232,7 @@ void loop() {
   //-----------------------------------------SENSOR CAPTURE----------------------------------------
   if (SensorCaptureTimer >= SensorCaptureTrigger) {
     counts = analogRead(UV_PIN);
-    UVSensorVoltage = ((counts * 3300 * 5) / 1024) * voltageoffset;
+    UVSensorVoltage = (((counts * 3300 * 5) / 1024)) * voltageoffset;
     CurrentReading = ((UVSensorVoltage - 108) / 97);
     if (CurrentReading > 12) {
       CurrentReading = 12;
@@ -247,7 +242,12 @@ void loop() {
     }
 
     //Giving momentum to decreasing readings. Prevents shade bias. Slows down decay.
-    if (CurrentReading < PreviousReading) {
+    if (CurrentReading > PreviousReading) {
+      for (int i = 0; i < UVnumReadings; i++) {
+        UVreadings[i] = CurrentReading;
+      }
+      UVtotal = CurrentReading * UVnumReadings;
+    } else {
       CurrentReading = PreviousReading - ((PreviousReading - CurrentReading) / 10);
     }
     PreviousReading = CurrentReading;
@@ -539,7 +539,7 @@ void loop() {
         break;  //----DO NOT REMOVE----
       case 4:
         switch (WatchSubModeSelect) {
-          //Settings Mode
+          //Apply sunscreen question
           case 1:
             NeoPixelArray[0][2] = 255;
             NeoPixelArray[3][2] = 255;
@@ -549,6 +549,8 @@ void loop() {
           case 2:
             //Apply sunscreen
             SunScreenApplied = true;
+            SunScreenTTBTimer = SunScreenDurationSeconds;
+            WatchModeSelect = 1;
             WatchSubModeSelect = 1;
             break;
           default:

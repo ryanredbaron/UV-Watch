@@ -6,6 +6,10 @@ while($TRUE){
     $PSHour = "int ExtClockHour = $($($CurrentTime.ToString("hh"))-replace '^0+', '');"
     $PSMinute = "int ExtClockMinute = $($($CurrentTime.ToString("mm"))-replace '^0+', '');"
     $PSSecond = "int ExtClockSecond = $($($CurrentTime.ToString("ss"))-replace '^0+', '');"
+    
+    if(-not $PSHour){$PSHour = 0}
+    if(-not $PSMinute){$PSHour = 0}
+    if(-not $PSSecond){$PSHour = 0}
 
     $PSHour | out-file $MyValsLocation -Encoding ASCII
     $PSMinute | Add-Content $MyValsLocation -Encoding ASCII
