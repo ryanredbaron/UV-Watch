@@ -121,6 +121,9 @@ int ErrorTime = 0;
 unsigned long cumuErrorTime = 0;
 
 void setup() {
+  if (ClockHour >= 12) {
+    ClockHour = 0;
+  }
   Serial.begin(9600);
   Serial.println();
   Serial.println();
